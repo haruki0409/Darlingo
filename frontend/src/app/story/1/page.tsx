@@ -6,7 +6,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
-type Bg = "street-happy" | "street-mad" | "cafe-happy" | "cafe-mad";
+type Bg =
+  | "street-happy"
+  | "street-normal"
+  | "street-mad"
+  | "cafe-happy"
+  | "cafe-normal"
+  | "cafe-mad";
 
 type Option = { ko: string; correct?: boolean };
 type WrongFB = { madBg: Bg; ja: string; ko: string };
@@ -34,9 +40,11 @@ type Beat = (
 ) & { bg?: Bg };
 
 const BG_SRC: Record<Bg, string> = {
-  "street-happy": "/images/stage1-street-happy.jpg",
+  "street-happy": "/images/stage1-street-happy.png",
+  "street-normal": "/images/stage1-street-normal.jpg",
   "street-mad": "/images/stage1-street-mad.png",
   "cafe-happy": "/images/stage1-cafe-happy.png",
+  "cafe-normal": "/images/stage1-cafe-normal.png",
   "cafe-mad": "/images/stage1-cafe-mad.png",
 };
 
@@ -52,11 +60,13 @@ const SCRIPT: Beat[] = [
   },
   {
     kind: "narr",
+    bg: "street-normal",
     ja: "新しいケータイの地図に夢中で歩いていたら——",
     ko: "새 휴대폰 지도만 들여다보며 걷고 있던 그 순간——",
   },
   {
     kind: "narr",
+    bg: "street-normal",
     ja: "角を曲がった瞬間、誰かと——!",
     ko: "모퉁이를 도는 순간, 누군가와——!",
   },
@@ -70,7 +80,7 @@ const SCRIPT: Beat[] = [
     ja: "ごめんなさい ／ すみません",
     reading: "고멘나사이 ／ 스미마셍",
     meaning: "미안해요 ／ 실례합니다",
-    note: "「ごめんなさい」는 사과 전용. 「すみません」는 사과 + 부탁 + 가게에서 \"저기요\" 까지 쓰는 만능 표현이에요.",
+    note: '「ごめんなさい」는 사과 전용. 「すみません」는 사과 + 부탁 + 가게에서 "저기요" 까지 쓰는 만능 표현이에요.',
     example: "すみません、コーヒーください。— 저기요, 커피 주세요.",
   },
   {
@@ -93,7 +103,7 @@ const SCRIPT: Beat[] = [
     ja: "大丈夫(だいじょうぶ)",
     reading: "다이죠-부",
     meaning: "괜찮다 ／ 괜찮아?",
-    note: "끝을 내리면 \"괜찮다\", 끝을 올리면 \"괜찮아?\". 일본인이 정말 자주 쓰는 만능 표현이에요.",
+    note: '끝을 내리면 "괜찮다", 끝을 올리면 "괜찮아?". 일본인이 정말 자주 쓰는 만능 표현이에요.',
     example: "大丈夫です。— 괜찮습니다. ／ 大丈夫ですか？— 괜찮으세요?",
   },
   {
@@ -108,7 +118,7 @@ const SCRIPT: Beat[] = [
   },
   {
     kind: "narr",
-    bg: "cafe-happy",
+    bg: "cafe-normal",
     ja: "こうして、見ず知らずの人とカフェで向かい合っている。",
     ko: "그렇게, 모르는 사람과 카페에 마주 앉았다.",
   },
@@ -141,7 +151,7 @@ const SCRIPT: Beat[] = [
   },
   {
     kind: "quiz",
-    question: "처음 만난 사람에게 \"잘 부탁드립니다\" 라고 하려면?",
+    question: '처음 만난 사람에게 "잘 부탁드립니다" 라고 하려면?',
     hint: "정중한 첫 인사 표현",
     options: [
       { ko: "ありがとうございます" },
@@ -163,6 +173,7 @@ const SCRIPT: Beat[] = [
   },
   {
     kind: "narr",
+    bg: "cafe-happy",
     ja: "春希は少しだけ笑った。その笑顔に、また胸が——トクン。",
     ko: "하루키가 살짝 미소지었다. 그 미소에 또, 가슴이——두근.",
   },
@@ -173,7 +184,7 @@ const SCRIPT: Beat[] = [
   },
   {
     kind: "quiz",
-    question: "메뉴를 가리키며 \"이거 주세요\" 라고 하려면?",
+    question: '메뉴를 가리키며 "이거 주세요" 라고 하려면?',
     hint: "내 근처에 있는 물건",
     options: [
       { ko: "これ、ください", correct: true },
@@ -367,8 +378,7 @@ function DialogueBox({
   onTap: () => void;
   beatKey: number;
 }) {
-  const tone =
-    beat.kind === "line" ? "haruki" : ("narr" as "haruki" | "narr");
+  const tone = beat.kind === "line" ? "haruki" : ("narr" as "haruki" | "narr");
   const isThought = beat.kind === "thought";
 
   return (
@@ -572,8 +582,7 @@ function EndCard({ wrongCount }: { wrongCount: number }) {
             NEXT ・ 다음 화
           </p>
           <p className="mt-0.5 text-[13px] font-extrabold text-white">
-            흔들리는 마음{" "}
-            <span className="text-lilac-200">・ 揺れる心</span>
+            흔들리는 마음 <span className="text-lilac-200">・ 揺れる心</span>
           </p>
         </div>
         <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-extrabold tracking-[0.18em] text-white ring-1 ring-white/25">
@@ -745,7 +754,9 @@ export default function Stage1Page() {
         type="button"
         onClick={advance}
         aria-label="계속"
-        disabled={!!madFB || !beat || beat.kind === "quiz" || beat.kind === "end"}
+        disabled={
+          !!madFB || !beat || beat.kind === "quiz" || beat.kind === "end"
+        }
         className="relative z-10 flex-1 cursor-pointer disabled:cursor-default"
       />
 
