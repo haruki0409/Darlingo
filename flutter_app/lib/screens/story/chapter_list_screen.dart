@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/chapter.dart';
 import '../../models/story.dart';
 import '../../services/api.dart';
 import '../../theme.dart';
+import '../onboarding/story_wizard_screen.dart';
+import '../story_lesson_screen.dart';
 import 'chapter_play_screen.dart';
 
 /// Shows a story's chapters. Tapping an unlocked chapter opens the visual-novel
@@ -42,6 +45,63 @@ class _ChapterListScreenState extends State<ChapterListScreen> {
     }
   }
 
+  Future<void> _startNewStory() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text('새 스토리 시작'),
+        content: const Text(
+          '새 스토리 마법사로 이동해요. 지금 보고 있는 스토리는 그대로 남아 있어요.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.purple),
+            child: const Text('시작'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true || !mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(builder: (_) => const StoryWizardScreen()),
+    );
+    if (mounted) await _reload();
+  }
+
+  Future<void> _signOut() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text('로그아웃 할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.pinkSoft),
+            child: const Text('로그아웃'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await Supabase.instance.client.auth.signOut();
+    }
+  }
+
   Future<void> _openChapter(Chapter chapter) async {
     await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -61,6 +121,18 @@ class _ChapterListScreenState extends State<ChapterListScreen> {
     return SakuraScaffold(
       appBar: AppBar(
         title: Text(_story.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            tooltip: '새 스토리',
+            onPressed: _startNewStory,
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: '로그아웃',
+            onPressed: _signOut,
+          ),
+        ],
         bottom: _refreshing
             ? const PreferredSize(
                 preferredSize: Size.fromHeight(2),
@@ -76,6 +148,14 @@ class _ChapterListScreenState extends State<ChapterListScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
+            _DemoLessonCard(
+              onTap: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (_) => const StoryLessonScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
             GlassCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,6 +233,150 @@ class _ChapterListScreenState extends State<ChapterListScreen> {
                           fontSize: 12.5,
                           height: 1.3,
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DemoLessonCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _DemoLessonCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          height: 132,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFF6BA0).withOpacity(0.32),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/images/japanese_woman1.jpg',
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.2),
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        const Color(0xFFA94BE0).withOpacity(0.85),
+                        const Color(0xFFA94BE0).withOpacity(0.35),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.55, 1.0],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 9, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.auto_awesome_rounded,
+                                    color: Color(0xFFA94BE0), size: 12),
+                                SizedBox(width: 4),
+                                Text(
+                                  '체험 레슨',
+                                  style: TextStyle(
+                                    color: Color(0xFFA94BE0),
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '東京での出会い',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                              height: 1.1,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black38,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  '도쿄에서의 첫 만남 · 미니퀴즈 포함',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(11),
+                                ),
+                                child: const Icon(
+                                  Icons.play_arrow_rounded,
+                                  color: Color(0xFFA94BE0),
+                                  size: 22,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),

@@ -278,7 +278,7 @@ class _StoryWizardScreenState extends State<StoryWizardScreen> {
   }) =>
       DropdownButtonFormField<T>(
         key: key,
-        initialValue: value,
+        value: value,
         isExpanded: true,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(labelOf(e))))
