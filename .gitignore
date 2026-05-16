@@ -15,7 +15,15 @@ flutter_app/.flutter-plugins
 flutter_app/.flutter-plugins-dependencies
 flutter_app/.packages
 flutter_app/pubspec.lock
+flutter_app/run_web.sh
+flutter_app/run_web_shared.sh
+
+# Reference material (local only)
+references/
 
 # Misc
 .DS_Store
 *.log
+
+# Android run script (contains keys, local only)
+flutter_app/run_android.sh

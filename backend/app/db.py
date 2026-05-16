@@ -7,6 +7,7 @@ would use Alembic migrations instead.
 
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -46,3 +47,16 @@ async def init_db() -> None:
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+
+async def run_migrations() -> None:
+    """Apply small, idempotent schema changes that create_all cannot make
+    (adding columns to existing tables). Hackathon-grade; use Alembic later."""
+    statements = [
+        "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS chapter_id UUID "
+        "REFERENCES chapters(id) ON DELETE SET NULL",
+        "ALTER TABLE messages ADD COLUMN IF NOT EXISTS emotion VARCHAR(24)",
+    ]
+    async with engine.begin() as conn:
+        for statement in statements:
+            await conn.execute(text(statement))

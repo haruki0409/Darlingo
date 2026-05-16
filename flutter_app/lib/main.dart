@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
-import 'screens/chat_screen.dart';
+import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Config.validate();
   await Supabase.initialize(
     url: Config.supabaseUrl,
     anonKey: Config.supabaseAnonKey,
@@ -21,13 +23,14 @@ class LingoDarlingApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'LingoDarling',
-      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
+      debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(),
       home: const AuthGate(),
     );
   }
 }
 
-/// Shows the login screen until the user is authenticated, then the chat.
+/// Shows the login screen until the user is authenticated, then the app home.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -37,7 +40,7 @@ class AuthGate extends StatelessWidget {
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, _) {
         final session = Supabase.instance.client.auth.currentSession;
-        return session == null ? const LoginScreen() : const ChatScreen();
+        return session == null ? const LoginScreen() : const HomeScreen();
       },
     );
   }

@@ -8,21 +8,33 @@ import '../config.dart';
 class ChatEvent {
   ChatEvent.chunk(this.text)
       : type = 'chunk',
-        conversationId = null;
-  ChatEvent.done()
+        conversationId = null,
+        emotion = null,
+        chapterComplete = false;
+  ChatEvent.done({this.emotion, this.chapterComplete = false})
       : type = 'done',
         text = null,
         conversationId = null;
   ChatEvent.conversation(this.conversationId)
       : type = 'conversation',
-        text = null;
+        text = null,
+        emotion = null,
+        chapterComplete = false;
   ChatEvent.error(this.text)
       : type = 'error',
-        conversationId = null;
+        conversationId = null,
+        emotion = null,
+        chapterComplete = false;
 
   final String type;
   final String? text;
   final String? conversationId;
+
+  /// Partner emotion on a chapter `done` event (one of the EMOTIONS set).
+  final String? emotion;
+
+  /// True on a chapter `done` event when the chapter objective was met.
+  final bool chapterComplete;
 }
 
 /// Wraps the chat WebSocket: connect, send messages, receive [ChatEvent]s.
@@ -49,7 +61,10 @@ class ChatSocket {
       return switch (data['type']) {
         'conversation' => ChatEvent.conversation(data['id'] as String),
         'chunk' => ChatEvent.chunk(data['text'] as String),
-        'done' => ChatEvent.done(),
+        'done' => ChatEvent.done(
+            emotion: data['emotion'] as String?,
+            chapterComplete: (data['chapter_complete'] as bool?) ?? false,
+          ),
         _ => ChatEvent.error(data['text'] as String? ?? 'Unknown error'),
       };
     });

@@ -1,14 +1,19 @@
 """WebSocket chat route: authenticates, persists, and streams Gemini replies.
 
-Auth: the client connects with the Supabase JWT as a query param
-(`/ws/chat?token=...`), because browsers cannot set headers on WebSockets.
-Optionally pass `&conversation_id=...` to resume an existing conversation.
+Two modes:
+- Plain chat — a free conversation with the companion (Phase 1 behaviour).
+- Chapter chat — when the conversation belongs to a story chapter, the system
+  prompt carries the chapter scenario/objective, and the partner tags each
+  reply with `[emotion:x]` and emits `[chapter_complete]` when the objective
+  is met. Chapter replies are buffered (not token-streamed) so the tags can be
+  parsed out before the text reaches the client.
 
-Persistence: every user message and every completed companion reply is
-written to the `messages` table, so history survives reconnects and restarts.
+Auth: the client passes the Supabase JWT as a query param (`/ws/chat?token=`),
+optionally with `&conversation_id=` to resume or join a chapter conversation.
 """
 
 import logging
+import re
 import uuid
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -19,14 +24,17 @@ from sqlalchemy import select
 from app.auth import get_or_create_user, verify_supabase_token
 from app.config import settings
 from app.db import SessionLocal
-from app.models import Conversation, Message
-from app.persona import build_system_instruction
+from app.models import Chapter, Conversation, Message, Partner, Story
+from app.persona import build_chapter_instruction, build_system_instruction
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 _client: genai.Client | None = None
+
+_EMOTION_RE = re.compile(r"\[emotion:\s*(\w+)\s*\]", re.IGNORECASE)
+_COMPLETE_RE = re.compile(r"\[chapter_complete\]", re.IGNORECASE)
 
 
 def get_client() -> genai.Client:
@@ -44,6 +52,59 @@ def to_gemini_history(messages: list[Message]) -> list[types.Content]:
         role = "user" if m.role == "user" else "model"
         history.append(types.Content(role=role, parts=[types.Part(text=m.content)]))
     return history
+
+
+def _parse_chapter_reply(text: str) -> tuple[str | None, bool, str]:
+    """Pull the `[emotion:x]` tag and `[chapter_complete]` marker out of a
+    chapter reply, returning (emotion, is_complete, clean_text)."""
+    emotion_match = _EMOTION_RE.search(text)
+    emotion = emotion_match.group(1).lower() if emotion_match else None
+    is_complete = bool(_COMPLETE_RE.search(text))
+    clean = _COMPLETE_RE.sub("", _EMOTION_RE.sub("", text)).strip()
+    return emotion, is_complete, clean
+
+
+async def _build_instruction(
+    db, conversation: Conversation
+) -> tuple[str, bool]:
+    """Return (system_instruction, is_chapter_mode) for a conversation."""
+    if conversation.chapter_id is None:
+        return (
+            build_system_instruction(conversation.language, conversation.level),
+            False,
+        )
+
+    chapter = await db.get(Chapter, conversation.chapter_id)
+    story = await db.get(Story, chapter.story_id)
+    partner = await db.get(Partner, story.partner_id)
+
+    prior_summary: str | None = None
+    if chapter.idx > 1:
+        prev = (
+            await db.execute(
+                select(Chapter).where(
+                    Chapter.story_id == story.id,
+                    Chapter.idx == chapter.idx - 1,
+                )
+            )
+        ).scalar_one_or_none()
+        prior_summary = prev.summary if prev else None
+
+    scene = chapter.scene or {}
+    instruction = build_chapter_instruction(
+        partner_name=partner.name,
+        persona=partner.persona_prompt,
+        language=story.language,
+        level=story.level,
+        story_title=story.title,
+        chapter_title=chapter.title,
+        chapter_premise=chapter.premise,
+        objective=chapter.objective,
+        setting_tag=chapter.setting_tag,
+        opening_line=scene.get("partner_opening_line", ""),
+        prior_summary=prior_summary,
+    )
+    return instruction, True
 
 
 @router.websocket("/ws/chat")
@@ -65,16 +126,15 @@ async def chat_socket(websocket: WebSocket) -> None:
         await websocket.close()
         return
 
-    # Ensure the app-side user row exists; keep its id for later writes.
     async with SessionLocal() as db:
         user = await get_or_create_user(db, supabase_user)
         user_id = user.id
 
     resume_id = websocket.query_params.get("conversation_id")
 
-    # Set up lazily on the first message (we need language/level by then).
     chat_session = None
     conversation_id: uuid.UUID | None = None
+    is_chapter_mode = False
 
     try:
         while True:
@@ -85,14 +145,16 @@ async def chat_socket(websocket: WebSocket) -> None:
             if not message:
                 continue
 
-            # --- First message: create or resume the conversation ----------
+            # --- First message: create/resume the conversation ------------
             if chat_session is None:
                 async with SessionLocal() as db:
                     conversation: Conversation | None = None
                     if resume_id:
-                        conversation = await db.get(Conversation, uuid.UUID(resume_id))
+                        conversation = await db.get(
+                            Conversation, uuid.UUID(resume_id)
+                        )
                         if conversation and conversation.user_id != user_id:
-                            conversation = None  # not this user's conversation
+                            conversation = None
 
                     if conversation is None:
                         conversation = Conversation(
@@ -111,15 +173,14 @@ async def chat_socket(websocket: WebSocket) -> None:
                         history = to_gemini_history(list(result.scalars().all()))
 
                     conversation_id = conversation.id
-                    convo_language = conversation.language
-                    convo_level = conversation.level
+                    instruction, is_chapter_mode = await _build_instruction(
+                        db, conversation
+                    )
 
                 chat_session = get_client().aio.chats.create(
                     model=settings.gemini_model,
                     config=types.GenerateContentConfig(
-                        system_instruction=build_system_instruction(
-                            convo_language, convo_level
-                        ),
+                        system_instruction=instruction,
                     ),
                     history=history,
                 )
@@ -127,7 +188,7 @@ async def chat_socket(websocket: WebSocket) -> None:
                     {"type": "conversation", "id": str(conversation_id)}
                 )
 
-            # --- Persist the user message ----------------------------------
+            # --- Persist the user message ---------------------------------
             async with SessionLocal() as db:
                 db.add(
                     Message(
@@ -138,17 +199,35 @@ async def chat_socket(websocket: WebSocket) -> None:
                 )
                 await db.commit()
 
-            # --- Stream the companion reply --------------------------------
+            # --- Generate the reply ---------------------------------------
             try:
                 reply_parts: list[str] = []
                 stream = await chat_session.send_message_stream(message)
                 async for chunk in stream:
                     if chunk.text:
                         reply_parts.append(chunk.text)
-                        await websocket.send_json(
-                            {"type": "chunk", "text": chunk.text}
-                        )
-                await websocket.send_json({"type": "done"})
+                        # Plain chat streams live; chapter chat is buffered so
+                        # the emotion / completion tags can be stripped first.
+                        if not is_chapter_mode:
+                            await websocket.send_json(
+                                {"type": "chunk", "text": chunk.text}
+                            )
+                full_reply = "".join(reply_parts)
+
+                if is_chapter_mode:
+                    emotion, complete, clean = _parse_chapter_reply(full_reply)
+                    await websocket.send_json({"type": "chunk", "text": clean})
+                    await websocket.send_json(
+                        {
+                            "type": "done",
+                            "emotion": emotion,
+                            "chapter_complete": complete,
+                        }
+                    )
+                    saved_text, saved_emotion = clean, emotion
+                else:
+                    await websocket.send_json({"type": "done"})
+                    saved_text, saved_emotion = full_reply, None
             except Exception:
                 logger.exception("Gemini request failed")
                 await websocket.send_json(
@@ -159,15 +238,15 @@ async def chat_socket(websocket: WebSocket) -> None:
                 )
                 continue
 
-            # --- Persist the completed companion reply ---------------------
-            full_reply = "".join(reply_parts)
-            if full_reply:
+            # --- Persist the companion reply ------------------------------
+            if saved_text:
                 async with SessionLocal() as db:
                     db.add(
                         Message(
                             conversation_id=conversation_id,
                             role="companion",
-                            content=full_reply,
+                            content=saved_text,
+                            emotion=saved_emotion,
                         )
                     )
                     await db.commit()

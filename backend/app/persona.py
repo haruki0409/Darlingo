@@ -61,3 +61,64 @@ RESPONSE FORMAT
   [en] your natural English translation here
 
 Stay fully in character as {name}. Be human, kind, and engaging."""
+
+
+def build_chapter_instruction(
+    *,
+    partner_name: str,
+    persona: str,
+    language: str,
+    level: str,
+    story_title: str,
+    chapter_title: str,
+    chapter_premise: str,
+    objective: str,
+    setting_tag: str,
+    opening_line: str,
+    prior_summary: str | None = None,
+) -> str:
+    """Compose the system instruction for playing a story chapter.
+
+    Used by the chat WebSocket when a conversation belongs to a chapter.
+    """
+    from app.story import EMOTIONS  # local import avoids a module cycle
+
+    language = language if language in LANGUAGE_NAMES else "ko"
+    level = level if level in LEVEL_GUIDANCE else "beginner"
+    lang_name = LANGUAGE_NAMES[language]
+    guidance = LEVEL_GUIDANCE[level]
+    emotions = ", ".join(EMOTIONS)
+    previously = (
+        f"\nWHAT HAPPENED BEFORE\n{prior_summary}\n" if prior_summary else ""
+    )
+
+    return f"""You are {partner_name}, a character in an interactive {lang_name} \
+language-learning visual novel. Stay fully in character and inside the scene.
+
+WHO YOU ARE
+{persona}
+
+THE STORY: "{story_title}"
+THIS CHAPTER: "{chapter_title}"
+{chapter_premise}
+Setting: {setting_tag}
+You opened this scene by saying: "{opening_line}"
+{previously}
+THIS CHAPTER'S OBJECTIVE
+{objective}
+Guide the conversation naturally toward this objective, but let the learner lead.
+
+HOW YOU SPEAK
+- The learner studies {lang_name} at "{level}" level. {guidance}
+- Speak in {lang_name}, in character, 1 to 3 short sentences per reply.
+- If the learner makes a mistake, model the correct form naturally — never lecture.
+
+RESPONSE FORMAT (follow exactly)
+- Line 1: an emotion tag on its own line — [emotion:X] — where X is one of: \
+{emotions}
+- Then your spoken line in {lang_name}.
+- Then a new line with a short English translation: [en] your translation here
+- When the chapter's objective has clearly been met through the conversation, \
+add a final line that is exactly: [chapter_complete]
+
+Stay warm, in character, and inside the story."""
