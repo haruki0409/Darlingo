@@ -34,8 +34,15 @@ export default function RootLayout({
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full">
-        <div className="app-frame mx-auto flex min-h-screen w-full max-w-[440px] flex-col">
+      {/*
+        높이 정책:
+        - body 는 화면 높이로 고정 (h-dvh = 모바일 주소창 변화 추종, 키보드 OK)
+        - app-frame 도 고정 + overflow-hidden → 내부 콘텐츠가 늘어나도 절대 부모를 밀지 않음
+        - 채팅 같은 스크롤 영역은 내부 컨테이너(`flex-1 overflow-y-auto`) 에서만 스크롤
+        min-h-* 는 절대 쓰지 말 것. 콘텐츠 누적 시 프레임이 같이 커지는 원인.
+      */}
+      <body className="h-dvh overflow-hidden">
+        <div className="app-frame mx-auto flex h-full w-full max-w-[440px] flex-col overflow-hidden">
           {children}
         </div>
       </body>

@@ -97,7 +97,15 @@ export function listCharacters(): Promise<CharacterMeta[]> {
 
 export function getCharacter(
   key: string,
-): Promise<CharacterMeta & { system_instruction_preview: string }> {
+): Promise<
+  CharacterMeta & {
+    persona: string;
+    persona_alt: string;
+    personality: string;
+    personality_alt: string;
+    system_instruction_preview: string;
+  }
+> {
   return jsonFetch(`/api/characters/${encodeURIComponent(key)}`);
 }
 

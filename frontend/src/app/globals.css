@@ -53,9 +53,32 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* layout.tsx 에서 body 에 h-dvh 를 직접 줌. 여기서는 min-height 강제 안 함. */
 html,
 body {
-  min-height: 100%;
+  height: 100%;
+}
+
+/* ───────── 얇은 커스텀 스크롤바 (앱 전체 일관) ─────────
+   Firefox: scrollbar-width thin + 사쿠라 톤 색.
+   WebKit (Chrome/Safari/Edge): 6px 폭, 살짝 떠 있는 듯한 라일락 thumb. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(169, 75, 224, 0.3) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(169, 75, 224, 0.3);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(169, 75, 224, 0.5);
 }
 
 body {
@@ -126,6 +149,74 @@ body {
   animation: shake 0.45s ease-in-out;
 }
 
+/* --- 캐릭터 hero 애니메이션 --- */
+/* 숨쉬는 듯 위아래로 미세하게 떠다님. 정적 1장 이미지를 살리는 핵심. */
+@keyframes breathe {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* 더 풍성한 둥실둥실 — 위아래 + 좌우 + 살짝 회전을 다른 주기로 합성해서
+   기계적이지 않은 자연스러운 떠다님. translate3d 로 GPU 가속. */
+@keyframes float-y {
+  0%, 100% { transform: translate3d(0,  0, 0); }
+  50%      { transform: translate3d(0, -12px, 0); }
+}
+@keyframes float-x {
+  0%, 100% { transform: translate3d(0,    0, 0); }
+  50%      { transform: translate3d(6px, 0, 0); }
+}
+@keyframes float-rot {
+  0%, 100% { transform: rotate(-0.6deg); }
+  50%      { transform: rotate( 0.6deg); }
+}
+/* 세 애니메이션을 중첩하려면 wrapper 3 겹으로. 각 wrapper 가 하나씩 담당. */
+.animate-float-y   { animation: float-y   4.2s ease-in-out infinite; will-change: transform; }
+.animate-float-x   { animation: float-x   6.3s ease-in-out infinite; will-change: transform; }
+.animate-float-rot { animation: float-rot 7.8s ease-in-out infinite; will-change: transform; }
+
+/* 포즈 전환 시 부드러운 fade in (밀당 분위기) */
+@keyframes pose-fade {
+  from { opacity: 0; transform: scale(1.02); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-pose-fade { animation: pose-fade 0.45s ease-out; }
+
+/* 새 메시지 도착 시 캐릭터 펄스 — 살짝 커졌다 돌아옴 */
+@keyframes char-pulse {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+.animate-char-pulse {
+  animation: char-pulse 0.5s ease-out;
+}
+
+/* 채팅 말풍선 등장 — 살짝 아래에서 떠올라옴 */
+@keyframes bubble-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-bubble-in {
+  animation: bubble-in 0.28s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+/* 답변 대기 중 ... 점 세 개가 순차적으로 부풀어오름 */
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30%           { transform: translateY(-4px); opacity: 1; }
+}
+.typing-dot {
+  display: inline-block;
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.30s; }
+
 .gradient-text {
   background: linear-gradient(90deg, #ff6ba0 0%, #a94be0 100%);
   -webkit-background-clip: text;
@@ -157,7 +248,7 @@ body {
 
   .app-frame {
     margin-block: 24px;
-    min-height: calc(100vh - 48px);
+    height: calc(100dvh - 48px);
     border-radius: 36px;
     box-shadow:
       0 30px 70px -20px rgba(0, 0, 0, 0.55),

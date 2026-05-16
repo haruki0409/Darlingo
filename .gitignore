@@ -1,29 +1,39 @@
-# Serena
-.serena/
+# ============================================================
+#  LingoDarling — main repo .gitignore
+#  main 브랜치는 frontend/ 만 트래킹.
+#  다른 협업자/AI 트랙은 별도 브랜치(nextjs, hhj 등)에서 작업.
+# ============================================================
 
-# Python
+# Local-only project tracks (not part of main)
+AI/
+backend/
+docs/
+flutter_app/
+references/
+
+# ── Node / Next.js (frontend 내부에 있는 .gitignore 가 더 자세하지만,
+#    혹시 루트에서 동일 패턴이 생길 경우 대비) ──
+node_modules/
+.next/
+out/
+build/
+.vercel
+
+# Env files — 절대 커밋 금지
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Python (혹시 로컬에서 스크립트 만들 때)
 __pycache__/
 *.py[cod]
 .venv/
 venv/
-backend/.env
 
-# Flutter
-flutter_app/.dart_tool/
-flutter_app/build/
-flutter_app/.flutter-plugins
-flutter_app/.flutter-plugins-dependencies
-flutter_app/.packages
-flutter_app/pubspec.lock
-flutter_app/run_web.sh
-flutter_app/run_web_shared.sh
-
-# Reference material (local only)
-references/
-
-# Misc
+# Editor / OS
 .DS_Store
 *.log
-
-# Android run script (contains keys, local only)
-flutter_app/run_android.sh
+.serena/
+.idea/
+.vscode/

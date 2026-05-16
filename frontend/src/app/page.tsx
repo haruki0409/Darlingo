@@ -5,26 +5,26 @@ import { LangChips } from "@/components/LangChips";
 
 export default function Home() {
   return (
-    <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
+    <div className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-12">
       <FloatingChars />
 
       <main className="relative z-10 w-full max-w-md">
         <BrandHeader />
 
         <div className="glass-card mt-10 rounded-3xl p-7">
-          <p className="text-center text-sm font-semibold text-ink-700">
+          <p className="text-center text-base font-bold text-ink-700">
             어서와요 ♡ お帰りなさい
           </p>
-          <p className="mt-1.5 text-center text-xs leading-relaxed text-ink-500">
-            매일 두근거리는 대화로
+          <p className="mt-2 text-center text-[13px] font-normal leading-relaxed text-ink-500">
+            매일 두근거리는 대화로 한국어와 일본어를 함께
             <br />
-            한국어와 일본어를 한 번에 익혀보세요.
+            ドキドキの会話で韓国語と日本語、両方一気に
           </p>
 
           <div className="mt-6 flex flex-col gap-3">
             <Link
               href="/login"
-              className="group flex h-13 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sakura-500 to-lilac-500 px-5 py-3.5 text-sm font-extrabold tracking-wide text-white shadow-[0_10px_22px_-6px_rgba(255,107,160,0.55)] transition hover:brightness-110 active:scale-[0.98]"
+              className="group flex h-13 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sakura-500 to-lilac-500 px-5 py-3.5 text-sm font-bold tracking-wide text-white shadow-[0_10px_22px_-6px_rgba(255,107,160,0.55)] transition hover:brightness-110 active:scale-[0.98]"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -34,14 +34,14 @@ export default function Home() {
               >
                 <path d="M12 21s-7.5-4.7-9.6-9.3C1 8.6 2.6 5 6.2 5c2 0 3.4 1 4.3 2.4l1.5 2 1.5-2C14.4 6 15.8 5 17.8 5c3.6 0 5.2 3.6 3.8 6.7C19.5 16.3 12 21 12 21z" />
               </svg>
-              시작하기 ・ はじめる
+              시작하기 / はじめる
             </Link>
 
             <Link
               href="/signup"
-              className="flex h-13 items-center justify-center rounded-2xl border-1.5 border-lilac-300 bg-white/60 px-5 py-3.5 text-sm font-bold tracking-wide text-lilac-500 transition hover:bg-white active:scale-[0.98]"
+              className="flex h-13 items-center justify-center rounded-2xl border-1.5 border-lilac-300 bg-white/60 px-5 py-3.5 text-sm font-medium tracking-wide text-lilac-500 transition hover:bg-white active:scale-[0.98]"
             >
-              처음이에요 ・ 新規登録
+              처음이에요 / はじめて
             </Link>
           </div>
         </div>
