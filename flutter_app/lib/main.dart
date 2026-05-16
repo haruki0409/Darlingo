@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
-import 'screens/chat_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/story_lesson_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +38,7 @@ class AuthGate extends StatelessWidget {
       stream: Supabase.instance.client.auth.onAuthStateChange,
       builder: (context, _) {
         final session = Supabase.instance.client.auth.currentSession;
-        return session == null ? const LoginScreen() : const ChatScreen();
+        return session == null ? const LoginScreen() : const StoryLessonScreen();
       },
     );
   }
