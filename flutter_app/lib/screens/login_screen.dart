@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Bridge',
+                Text('LingoDarling',
                     style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 4),
                 const Text('Your AI companion for Korean & Japanese'),

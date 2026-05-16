@@ -1,4 +1,4 @@
-"""End-to-end smoke test for the Bridge backend.
+"""End-to-end smoke test for the LingoDarling backend.
 
 Signs in (or signs up) a Supabase test user, then exercises the chat
 WebSocket and the conversation REST endpoints. Lets you verify the whole

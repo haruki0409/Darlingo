@@ -108,7 +108,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bridge'),
+        title: const Text('LingoDarling'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

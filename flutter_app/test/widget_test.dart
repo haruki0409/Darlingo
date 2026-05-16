@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:bridge_flutter/models/message.dart';
+import 'package:lingo_darling/models/message.dart';
 
 void main() {
   test('streamed companion tokens append to the message text', () {

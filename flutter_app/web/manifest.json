@@ -1,11 +1,11 @@
 {
-    "name": "bridge_flutter",
-    "short_name": "bridge_flutter",
+    "name": "LingoDarling",
+    "short_name": "LingoDarling",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "AI companion app for learning Korean and Japanese.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
