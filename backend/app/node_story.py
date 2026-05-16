@@ -7,7 +7,9 @@ direction:
   - Korean stories:   target = Korean,   native = Japanese
 """
 
+import json
 import logging
+from pathlib import Path
 
 from google import genai
 from google.genai import types
@@ -97,6 +99,34 @@ PREMADE_STORIES: list[dict] = [
 
 
 _client: genai.Client | None = None
+
+_PREMADE_NODES_PATH = Path(__file__).parent / "premade_nodes.json"
+_premade_nodes_cache: dict[str, list[dict]] | None = None
+
+
+def premade_key(language: str, title: str) -> str:
+    """Stable key used to look up pre-generated node sequences in
+    `premade_nodes.json`. Title is not unique across languages, so we namespace
+    by language."""
+    return f"{language}|{title}"
+
+
+def load_premade_nodes(*, refresh: bool = False) -> dict[str, list[dict]]:
+    """Return the cached `{language|title: nodes}` map for premade stories.
+
+    The map is loaded from `premade_nodes.json` next to this module; if the
+    file is missing (no one ran the seed script yet) we return an empty dict
+    and let callers handle the absence.
+    """
+    global _premade_nodes_cache
+    if _premade_nodes_cache is None or refresh:
+        if _PREMADE_NODES_PATH.exists():
+            _premade_nodes_cache = json.loads(
+                _PREMADE_NODES_PATH.read_text(encoding="utf-8")
+            )
+        else:
+            _premade_nodes_cache = {}
+    return _premade_nodes_cache
 
 
 def _get_client() -> genai.Client:

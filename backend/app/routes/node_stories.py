@@ -16,7 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.db import get_session
 from app.models import NodeStory, User
-from app.node_story import PREMADE_STORIES, generate_story_nodes
+from app.node_story import (
+    PREMADE_STORIES,
+    generate_story_nodes,
+    load_premade_nodes,
+    premade_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +46,26 @@ def _full(story: NodeStory) -> dict:
 
 
 async def _ensure_premade(db: AsyncSession) -> None:
-    """Seed the pre-made story concepts once."""
+    """Seed pre-made story concepts and backfill their nodes from
+    `premade_nodes.json` (produced by `scripts/seed_premade_nodes.py`).
+
+    Idempotent: inserts any concept that is not yet in the DB, and backfills
+    nodes on existing rows whose `nodes` is still NULL.
+    """
+    nodes_map = load_premade_nodes()
+
     existing = (
         await db.execute(
-            select(NodeStory.id).where(NodeStory.is_premade.is_(True)).limit(1)
+            select(NodeStory).where(NodeStory.is_premade.is_(True))
         )
-    ).first()
-    if existing is not None:
-        return
+    ).scalars().all()
+    existing_keys = {premade_key(s.language, s.title) for s in existing}
+
+    inserted = 0
     for concept in PREMADE_STORIES:
+        key = premade_key(concept["language"], concept["title"])
+        if key in existing_keys:
+            continue
         db.add(
             NodeStory(
                 title=concept["title"],
@@ -57,9 +73,27 @@ async def _ensure_premade(db: AsyncSession) -> None:
                 language=concept["language"],
                 level="beginner",
                 is_premade=True,
+                nodes=nodes_map.get(key),
             )
         )
-    await db.commit()
+        inserted += 1
+
+    backfilled = 0
+    for s in existing:
+        if s.nodes is None:
+            cached = nodes_map.get(premade_key(s.language, s.title))
+            if cached is not None:
+                s.nodes = cached
+                backfilled += 1
+
+    if inserted or backfilled:
+        await db.commit()
+        logger.info(
+            "Premade seed: %d inserted, %d backfilled (cache has %d entries)",
+            inserted,
+            backfilled,
+            len(nodes_map),
+        )
 
 
 @router.get("")
@@ -103,6 +137,18 @@ async def get_node_story(
         raise HTTPException(status_code=404, detail="Story not found")
 
     if story.nodes is None:
+        # Premade stories are served entirely from the pre-generated JSON
+        # cache; if a row is missing nodes the cache is incomplete, not a
+        # signal to call the LLM.
+        if story.is_premade:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "This story has not been prepared yet. "
+                    "Run `python -m scripts.seed_premade_nodes` once on the "
+                    "backend host to generate node sequences."
+                ),
+            )
         try:
             generated = await generate_story_nodes(
                 premise=story.premise,
