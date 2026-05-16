@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<!--
+  Phase-1 spike — self-contained talking-avatar page. THROWAWAY.
+
+  Validates three things only:
+    1. A 3D model with face morph targets renders (works in Chrome AND in an
+       Android WebView).
+    2. WebAudio amplitude (AnalyserNode) can drive a mouth blendshape.
+    3. The same window.spike* functions can be called by Flutter via
+       runJavaScript, and messages flow back via window.FlutterBridge.
+
+  Loads three.js from a CDN and a public test head (facecap.glb — a realistic
+  face scan with ARKit blendshapes). That head is a TEST PUPPET, not a final
+  persona. Real avatars + offline bundling are later phases.
+
+  Open this file directly in Chrome to validate parts 1 & 2 without any device.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<style>
+  html,body { margin:0; height:100%; background:#1a1430; overflow:hidden; }
+  #status { position:absolute; top:6px; left:8px; right:8px; color:#9effa0;
+            font:11px/1.4 monospace; z-index:10; white-space:pre-wrap; }
+  #bar { position:absolute; bottom:0; left:0; right:0; display:flex;
+         flex-wrap:wrap; gap:6px; padding:8px; background:rgba(0,0,0,0.6);
+         z-index:10; }
+  button { font:12px monospace; padding:8px 10px; border:0; border-radius:6px;
+           background:#6c5ce7; color:#fff; }
+  canvas { display:block; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="status">booting...</div>
+<div id="bar">
+  <button onclick="spikePlayTestAudio()">Test lip-sync</button>
+  <button onclick="spikeSetEmotion('happy')">Happy</button>
+  <button onclick="spikeSetEmotion('sad')">Sad</button>
+  <button onclick="spikeSetEmotion('surprised')">Surprised</button>
+  <button onclick="spikeSetEmotion('neutral')">Neutral</button>
+  <button onclick="spikeListMorphs()">List morphs</button>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+const statusEl = document.getElementById('status');
+function status(msg){ statusEl.textContent = msg; bridge(msg); }
+function bridge(msg){
+  try { if (window.FlutterBridge) window.FlutterBridge.postMessage(String(msg)); }
+  catch(e){}
+}
+
+let renderer, scene, camera, head, morphDict;
+let analyser, dataArray, audioCtx, jawMorph = null;
+let lipTarget = 0, lipCurrent = 0;
+let emotionTarget = {};
+
+init();
+
+function init(){
+  try {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(30, window.innerWidth/window.innerHeight, 0.01, 100);
+
+    renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 2.0));
+    const dir = new THREE.DirectionalLight(0xffffff, 2.5);
+    dir.position.set(0.5, 1, 1.5);
+    scene.add(dir);
+
+    status('renderer ok, loading model...');
+    // facecap.glb ships KTX2-compressed textures + Meshopt-compressed geometry,
+    // so GLTFLoader needs both decoders wired up before it can read the file.
+    const ktx2 = new KTX2Loader()
+      .setTranscoderPath('https://unpkg.com/three@0.160.0/examples/jsm/libs/basis/')
+      .detectSupport(renderer);
+    new GLTFLoader()
+      .setKTX2Loader(ktx2)
+      .setMeshoptDecoder(MeshoptDecoder)
+      .load(
+        'https://threejs.org/examples/models/gltf/facecap.glb',
+        onModel,
+        undefined,
+        (err)=> status('MODEL ERROR: ' + (err && err.message ? err.message : err))
+      );
+  } catch(e){
+    status('INIT ERROR: ' + e);
+  }
+
+  window.addEventListener('resize', ()=>{
+    if (!camera || !renderer) return;
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+function onModel(gltf){
+  gltf.scene.traverse((o)=>{
+    if (o.isMesh && o.morphTargetDictionary){ head = o; morphDict = o.morphTargetDictionary; }
+  });
+  if (!head){ status('LOADED but NO morph targets — lip-sync impossible'); return; }
+
+  // Auto-frame the camera so the spike works regardless of model scale.
+  const box = new THREE.Box3().setFromObject(gltf.scene);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z) || 1;
+  camera.position.set(center.x, center.y, center.z + maxDim*1.7);
+  camera.lookAt(center);
+  scene.add(gltf.scene);
+
+  // Discover the mouth-open morph rather than assuming a name.
+  jawMorph = ['jawOpen','mouthOpen','viseme_aa','viseme_AA','jaw_open']
+    .find((n)=> morphDict[n] !== undefined) || null;
+
+  bridge('MORPHS(' + Object.keys(morphDict).length + '): ' + Object.keys(morphDict).join(','));
+  status('model ready. jaw morph = ' + (jawMorph || 'NOT FOUND'));
+  animate();
+}
+
+function setMorph(name, value){
+  if (head && name && morphDict[name] !== undefined){
+    head.morphTargetInfluences[morphDict[name]] = value;
+  }
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  if (analyser){
+    analyser.getByteTimeDomainData(dataArray);
+    let sum = 0;
+    for (let i=0;i<dataArray.length;i++){ const v=(dataArray[i]-128)/128; sum += v*v; }
+    lipTarget = Math.min(1, Math.sqrt(sum/dataArray.length) * 4.0);
+  } else {
+    lipTarget = 0;
+  }
+  lipCurrent += (lipTarget - lipCurrent) * 0.5;
+  if (jawMorph) setMorph(jawMorph, lipCurrent);
+  for (const k in emotionTarget) setMorph(k, emotionTarget[k]);
+  renderer.render(scene, camera);
+}
+
+// ---- API callable from Flutter via runJavaScript (and the on-page buttons) ----
+window.spikeSetEmotion = function(emotion){
+  for (const k in emotionTarget) setMorph(k, 0);   // reset previous emotion
+  emotionTarget = {};
+  if (emotion === 'happy'){
+    emotionTarget = { mouthSmileLeft:0.9, mouthSmileRight:0.9, cheekSquintLeft:0.4, cheekSquintRight:0.4 };
+  } else if (emotion === 'sad'){
+    emotionTarget = { mouthFrownLeft:0.8, mouthFrownRight:0.8, browInnerUp:0.7 };
+  } else if (emotion === 'surprised'){
+    emotionTarget = { eyeWideLeft:1.0, eyeWideRight:1.0, browInnerUp:1.0, browOuterUpLeft:0.8, browOuterUpRight:0.8 };
+  }
+  status('emotion: ' + emotion);
+};
+
+window.spikeListMorphs = function(){
+  status(head ? Object.keys(morphDict).join(', ') : 'no model loaded');
+  if (head) console.log('SPIKE morphTargets:', Object.keys(morphDict));
+};
+
+window.spikePlayTestAudio = function(){
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume();
+    const osc  = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    dataArray = new Uint8Array(analyser.fftSize);
+    osc.type = 'sawtooth';
+    osc.frequency.value = 130;
+    // Amplitude envelope mimicking ~14 spoken syllables.
+    const now = audioCtx.currentTime;
+    gain.gain.setValueAtTime(0.02, now);
+    for (let i=0;i<14;i++){
+      const t = now + i*0.18;
+      gain.gain.linearRampToValueAtTime(0.2 + 0.6*Math.random(), t+0.06);
+      gain.gain.linearRampToValueAtTime(0.02, t+0.16);
+    }
+    const end = now + 14*0.18;
+    osc.connect(gain); gain.connect(analyser); analyser.connect(audioCtx.destination);
+    osc.start(now); osc.stop(end);
+    osc.onended = ()=>{ analyser = null; status('audio ended (jaw should rest)'); };
+    status('lip-sync running — jaw should track the sound');
+  } catch(e){
+    status('AUDIO ERROR: ' + e);
+  }
+};
+</script>
+</body>
+</html>

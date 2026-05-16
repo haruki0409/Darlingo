@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../models/word_entry.dart';
 import '../../services/api.dart';
 import '../../services/chat_socket.dart';
 import '../../theme.dart';
@@ -39,6 +40,8 @@ class _ChapterPlayScreenState extends State<ChapterPlayScreen> {
   String? _lastUserLine;
   bool _busy = false;
   bool _complete = false;
+  List<ReplySuggestion> _suggestions = [];
+  bool _loadingSuggestions = false;
 
   @override
   void initState() {
@@ -77,6 +80,7 @@ class _ChapterPlayScreenState extends State<ChapterPlayScreen> {
         _socket = socket;
         _loading = false;
       });
+      _fetchSuggestions();
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -101,6 +105,9 @@ class _ChapterPlayScreenState extends State<ChapterPlayScreen> {
         _partnerLine = '⚠️ ${event.text}';
       }
     });
+    if (event.type == 'done') {
+      _fetchSuggestions();
+    }
   }
 
   void _send() {
@@ -111,8 +118,109 @@ class _ChapterPlayScreenState extends State<ChapterPlayScreen> {
       _busy = true;
       _partnerLine = '…';
       _inputCtrl.clear();
+      _suggestions = [];
     });
     _socket!.send(text, widget.language, widget.level);
+  }
+
+  void _sendSuggestion(ReplySuggestion suggestion) {
+    if (_busy) return;
+    _inputCtrl.text = suggestion.text;
+    _send();
+  }
+
+  /// Fetch "you could say…" suggestions — only for beginners.
+  Future<void> _fetchSuggestions() async {
+    if (widget.level != 'beginner' || _complete || _socket == null) return;
+    setState(() {
+      _suggestions = [];
+      _loadingSuggestions = true;
+    });
+    try {
+      final suggestions = await Api.getSuggestions(widget.chapterId);
+      if (mounted) {
+        setState(() {
+          _suggestions = suggestions;
+          _loadingSuggestions = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loadingSuggestions = false);
+      }
+    }
+  }
+
+  Widget _suggestionBar() {
+    if (widget.level != 'beginner' || _busy) return const SizedBox.shrink();
+    if (_loadingSuggestions) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 6),
+        child: Text(
+          '💡 thinking of suggestions…',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 11, color: AppColors.textLabel),
+        ),
+      );
+    }
+    if (_suggestions.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4, left: 4),
+            child: Text(
+              '💡 You could say…',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textHeading,
+              ),
+            ),
+          ),
+          for (final s in _suggestions)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: GestureDetector(
+                onTap: () => _sendSuggestion(s),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.purpleSoft.withValues(alpha: 0.4),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s.text,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      Text(
+                        s.translation,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Future<void> _finishChapter() async {
@@ -195,6 +303,7 @@ class _ChapterPlayScreenState extends State<ChapterPlayScreen> {
                 Expanded(child: Center(child: _sprite())),
                 if (_lastUserLine != null) _userLine(),
                 _dialogueBox(),
+                if (!_complete) _suggestionBar(),
                 _complete ? _completeBar() : _inputRow(),
               ],
             ),
@@ -309,7 +418,12 @@ class _ChapterPlayScreenState extends State<ChapterPlayScreen> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(line, style: const TextStyle(fontSize: 17)),
+          GestureDetector(
+            onTap: (line.isEmpty || line == '…')
+                ? null
+                : () => _showBreakdown(line),
+            child: Text(line, style: const TextStyle(fontSize: 17)),
+          ),
           if (gloss != null) ...[
             const SizedBox(height: 4),
             Text(
@@ -317,7 +431,35 @@ class _ChapterPlayScreenState extends State<ChapterPlayScreen> {
               style: const TextStyle(color: Colors.black54, fontSize: 13),
             ),
           ],
+          if (line.isNotEmpty && line != '…') ...[
+            const SizedBox(height: 8),
+            const Row(
+              children: [
+                Icon(Icons.touch_app_rounded,
+                    size: 13, color: AppColors.textLabel),
+                SizedBox(width: 4),
+                Text(
+                  'tap the line to break it down',
+                  style: TextStyle(fontSize: 11, color: AppColors.textLabel),
+                ),
+              ],
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  void _showBreakdown(String sentence) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _BreakdownSheet(
+        sentence: sentence,
+        language: widget.language,
       ),
     );
   }
@@ -410,3 +552,121 @@ const _emotionEmoji = <String, String>{
   'thinking': '🤔',
   'excited': '🤩',
 };
+
+/// Bottom sheet showing an AI word-by-word breakdown of a tapped line.
+class _BreakdownSheet extends StatelessWidget {
+  const _BreakdownSheet({required this.sentence, required this.language});
+
+  final String sentence;
+  final String language;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.menu_book_rounded,
+                    color: AppColors.purple, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Word breakdown',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textHeading,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              sentence,
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 14),
+            FutureBuilder<List<WordEntry>>(
+              future: Api.lookupSentence(sentence, language),
+              builder: (context, snap) {
+                if (snap.connectionState != ConnectionState.done) {
+                  return const Padding(
+                    padding: EdgeInsets.all(28),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.purple,
+                      ),
+                    ),
+                  );
+                }
+                if (snap.hasError) {
+                  return Text(
+                    'Lookup failed: ${snap.error}',
+                    style: const TextStyle(color: AppColors.errorText),
+                  );
+                }
+                final words = snap.data ?? [];
+                return ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.5,
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: words.length,
+                    separatorBuilder: (_, __) => const Divider(height: 16),
+                    itemBuilder: (_, i) {
+                      final w = words[i];
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                w.word,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              if (w.reading.isNotEmpty && w.reading != w.word)
+                                Text(
+                                  w.reading,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textLabel,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Text(
+                              w.meaning,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

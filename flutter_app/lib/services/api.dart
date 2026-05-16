@@ -6,8 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config.dart';
 import '../models/chapter.dart';
 import '../models/chapter_scene.dart';
+import '../models/curriculum.dart';
+import '../models/exercise.dart';
 import '../models/partner.dart';
 import '../models/story.dart';
+import '../models/word_entry.dart';
 
 /// Thrown when a backend request fails.
 class ApiException implements Exception {
@@ -144,6 +147,94 @@ class Api {
       storyCompleted: data['story_completed'] as bool,
     );
   }
+
+  /// Break a sentence into words with readings and short meanings.
+  static Future<List<WordEntry>> lookupSentence(
+    String text,
+    String language,
+  ) async {
+    final res = await http.post(
+      Uri.parse('${Config.apiUrl}/lookup'),
+      headers: _headers,
+      body: jsonEncode({'text': text, 'language': language}),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException('Lookup failed (${res.statusCode})');
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return (data['words'] as List)
+        .map((e) => WordEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Suggest a few things the learner could say next (beginner aid).
+  static Future<List<ReplySuggestion>> getSuggestions(String chapterId) async {
+    final res = await http.post(
+      Uri.parse('${Config.apiUrl}/chapters/$chapterId/suggestions'),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw ApiException('Could not get suggestions (${res.statusCode})');
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return (data['suggestions'] as List)
+        .map((e) => ReplySuggestion.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Fetch the structured curriculum for a language + level. The backend
+  /// generates it on first request, so this call can take ~15s the first time.
+  static Future<List<CurriculumUnit>> getCurriculum(
+    String language,
+    String level,
+  ) async {
+    final res = await http.get(
+      Uri.parse('${Config.apiUrl}/curriculum?language=$language&level=$level'),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw ApiException('Could not load curriculum (${res.statusCode})');
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return (data['units'] as List)
+        .map((e) => CurriculumUnit.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Begin a lesson — generates its exercises on first use (can take ~15s).
+  static Future<List<Exercise>> startLesson(String lessonId) async {
+    final res = await http.post(
+      Uri.parse('${Config.apiUrl}/lessons/$lessonId/start'),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw ApiException('Could not start lesson (${res.statusCode})');
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return (data['exercises'] as List)
+        .map((e) => Exercise.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Grade one answer in a lesson.
+  static Future<GradeResult> gradeExercise(
+    String lessonId,
+    int exerciseIndex,
+    String userAnswer,
+  ) async {
+    final res = await http.post(
+      Uri.parse('${Config.apiUrl}/lessons/$lessonId/grade'),
+      headers: _headers,
+      body: jsonEncode({
+        'exercise_index': exerciseIndex,
+        'user_answer': userAnswer,
+      }),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException('Grading failed (${res.statusCode})');
+    }
+    return GradeResult.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
 }
 
 /// Result of starting a chapter.
@@ -174,4 +265,18 @@ class ChapterWrapup {
   final List<String> vocabPracticed;
   final String? nextChapterId;
   final bool storyCompleted;
+}
+
+/// A suggested reply for the learner (beginner aid).
+class ReplySuggestion {
+  ReplySuggestion({required this.text, required this.translation});
+
+  final String text;
+  final String translation;
+
+  factory ReplySuggestion.fromJson(Map<String, dynamic> json) =>
+      ReplySuggestion(
+        text: json['text'] as String,
+        translation: json['translation'] as String,
+      );
 }

@@ -26,6 +26,7 @@ from app.config import settings
 from app.db import SessionLocal
 from app.models import Chapter, Conversation, Message, Partner, Story
 from app.persona import build_chapter_instruction, build_system_instruction
+from app.story import EMOTIONS
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,9 @@ router = APIRouter()
 
 _client: genai.Client | None = None
 
-_EMOTION_RE = re.compile(r"\[emotion:\s*(\w+)\s*\]", re.IGNORECASE)
+# Matches both `[emotion:happy]` and the shorthand `[happy]` the model often
+# emits. `[en]` also matches the pattern but is ignored (not a known emotion).
+_EMOTION_RE = re.compile(r"\[(?:emotion:\s*)?([a-zA-Z]+)\]", re.IGNORECASE)
 _COMPLETE_RE = re.compile(r"\[chapter_complete\]", re.IGNORECASE)
 
 
@@ -55,13 +58,29 @@ def to_gemini_history(messages: list[Message]) -> list[types.Content]:
 
 
 def _parse_chapter_reply(text: str) -> tuple[str | None, bool, str]:
-    """Pull the `[emotion:x]` tag and `[chapter_complete]` marker out of a
-    chapter reply, returning (emotion, is_complete, clean_text)."""
-    emotion_match = _EMOTION_RE.search(text)
-    emotion = emotion_match.group(1).lower() if emotion_match else None
+    """Pull the emotion tag and `[chapter_complete]` marker out of a chapter
+    reply, returning (emotion, is_complete, clean_text).
+
+    Accepts both `[emotion:happy]` and the shorthand `[happy]`. Leaves the
+    `[en]` gloss marker untouched (it is not a known emotion)."""
+    emotion_set = {e.lower() for e in EMOTIONS}
+
+    emotion: str | None = None
+    for match in _EMOTION_RE.finditer(text):
+        word = match.group(1).lower()
+        if word in emotion_set:
+            emotion = word
+            break
+
     is_complete = bool(_COMPLETE_RE.search(text))
-    clean = _COMPLETE_RE.sub("", _EMOTION_RE.sub("", text)).strip()
-    return emotion, is_complete, clean
+
+    def _strip_emotion(match: "re.Match[str]") -> str:
+        # Remove emotion tags only; keep anything else (e.g. `[en]`).
+        return "" if match.group(1).lower() in emotion_set else match.group(0)
+
+    clean = _COMPLETE_RE.sub("", text)
+    clean = _EMOTION_RE.sub(_strip_emotion, clean)
+    return emotion, is_complete, clean.strip()
 
 
 async def _build_instruction(

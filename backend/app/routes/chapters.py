@@ -15,7 +15,11 @@ from app.auth import get_current_user
 from app.db import get_session
 from app.models import Chapter, Conversation, Message, Partner, Story, User
 from app.routes.stories import _chapter_dict
-from app.story import generate_chapter_scene, summarize_chapter
+from app.story import (
+    generate_chapter_scene,
+    generate_reply_suggestions,
+    summarize_chapter,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -189,3 +193,51 @@ async def complete_chapter(
         "next_chapter_id": str(next_chapter.id) if next_chapter else None,
         "story_completed": next_chapter is None,
     }
+
+
+@router.post("/{chapter_id}/suggestions")
+async def chapter_suggestions(
+    chapter_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_session),
+) -> dict:
+    """Suggest a few things the learner could say next (beginner aid)."""
+    chapter, story = await _owned_chapter(db, chapter_id, user)
+
+    lines: list[str] = []
+    scene = chapter.scene or {}
+    if scene.get("partner_opening_line"):
+        lines.append(f"companion: {scene['partner_opening_line']}")
+
+    conversation = (
+        await db.execute(
+            select(Conversation).where(Conversation.chapter_id == chapter.id)
+        )
+    ).scalar_one_or_none()
+    if conversation is not None:
+        messages = (
+            await db.execute(
+                select(Message)
+                .where(Message.conversation_id == conversation.id)
+                .order_by(Message.created_at)
+            )
+        ).scalars().all()
+        lines.extend(f"{m.role}: {m.content}" for m in messages)
+
+    # Only the recent turns matter for "what to say next".
+    transcript = "\n".join(lines[-6:]) or "(the conversation is just starting)"
+
+    try:
+        result = await generate_reply_suggestions(
+            transcript=transcript,
+            language=story.language,
+            level=story.level,
+            objective=chapter.objective,
+        )
+    except Exception:
+        logger.exception("Reply suggestion generation failed")
+        raise HTTPException(
+            status_code=502, detail="Could not generate suggestions"
+        )
+
+    return {"suggestions": [s.model_dump() for s in result.suggestions]}

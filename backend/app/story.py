@@ -313,3 +313,57 @@ Return structured JSON."""
     if not isinstance(wrapup, ChapterWrapup):
         raise ValueError("Chapter wrap-up generation returned no usable result")
     return wrapup
+
+
+# --------------------------------------------------------------------------
+# Beginner aid — suggested replies
+# --------------------------------------------------------------------------
+
+
+class ReplySuggestion(BaseModel):
+    text: str
+    translation: str
+
+
+class ReplySuggestions(BaseModel):
+    suggestions: list[ReplySuggestion]
+
+
+async def generate_reply_suggestions(
+    *,
+    transcript: str,
+    language: str,
+    level: str,
+    objective: str,
+) -> ReplySuggestions:
+    """Suggest a few things the learner could say next (a beginner aid)."""
+    lang_name = LANGUAGE_NAMES.get(language, "Korean")
+    prompt = f"""A {lang_name} learner ({level} level) is in a conversation \
+and may not know what to say next. Suggest 3 short, natural things THEY could \
+say in response.
+
+CONVERSATION SO FAR
+{transcript}
+
+CHAPTER OBJECTIVE: {objective}
+
+For each suggestion provide:
+- text: a short line the learner could say, in {lang_name}, at {level} level
+- translation: its natural English translation
+
+Make the 3 suggestions varied and helpful for moving the scene toward the \
+objective. Return structured JSON."""
+
+    response = await _get_client().aio.models.generate_content(
+        model=settings.gemini_model,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=ReplySuggestions,
+        ),
+    )
+
+    result = response.parsed
+    if not isinstance(result, ReplySuggestions):
+        raise ValueError("Reply suggestion generation returned no usable result")
+    return result

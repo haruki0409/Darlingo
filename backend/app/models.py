@@ -168,3 +168,52 @@ class Chapter(Base):
     )
 
     story: Mapped["Story"] = relationship(back_populates="chapters")
+
+
+class Unit(Base):
+    """A curriculum unit — a themed group of lessons for one language+level.
+    Curriculum is global (shared by all users), generated once per combo."""
+
+    __tablename__ = "units"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    language: Mapped[str] = mapped_column(String(8))
+    level: Mapped[str] = mapped_column(String(16))
+    idx: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    description: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    lessons: Mapped[list["Lesson"]] = relationship(
+        back_populates="unit",
+        order_by="Lesson.idx",
+        cascade="all, delete-orphan",
+    )
+
+
+class Lesson(Base):
+    """A lesson within a unit. `target_items` are the vocab/grammar it teaches;
+    `exercises` is filled when the lesson is first played (Milestone C2)."""
+
+    __tablename__ = "lessons"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    unit_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("units.id", ondelete="CASCADE")
+    )
+    idx: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(200))
+    focus: Mapped[str] = mapped_column(Text)
+    target_items: Mapped[list] = mapped_column(JSONB, default=list)
+    exercises: Mapped[list | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    unit: Mapped["Unit"] = relationship(back_populates="lessons")
