@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
 type Stage = {
@@ -167,6 +167,7 @@ export default function StoryStagesPage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [cleared, setCleared] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -191,6 +192,13 @@ export default function StoryStagesPage() {
     };
   }, [router]);
 
+  // 화면에 다 들어가지 않으면 맨 아래(시작 스테이지)부터 보이도록 스크롤.
+  useEffect(() => {
+    if (!ready) return;
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [ready]);
+
   const unlockedThrough = Math.max(1, cleared + 1);
 
   if (!ready) {
@@ -202,7 +210,7 @@ export default function StoryStagesPage() {
   }
 
   return (
-    // 페이지는 부모(app-frame, 고정 높이) 채움. overflow-hidden 으로 스크롤 차단.
+    // 페이지는 부모(app-frame, 고정 높이) 채움. 헤더 고정 + 맵 영역만 스크롤.
     <div className="relative flex flex-1 flex-col overflow-hidden px-5 pb-4 pt-5">
       {/* Header */}
       <div className="relative z-10 flex shrink-0 items-center gap-3">
@@ -230,7 +238,12 @@ export default function StoryStagesPage() {
         </div>
       </div>
 
-      {/* Map — 고정 높이라 한 화면에 다 들어감. 스크롤 없음. */}
+      {/* 스크롤 영역 — 화면에 다 안 들어가면 세로 스크롤. 시작 시 맨 아래로. */}
+      <div
+        ref={scrollRef}
+        className="relative flex flex-1 flex-col overflow-y-auto"
+      >
+      {/* Map — 고정 높이 */}
       <div
         className="relative mx-auto mt-3 w-full max-w-[360px] shrink-0"
         style={{ height: MAP_HEIGHT }}
@@ -322,6 +335,7 @@ export default function StoryStagesPage() {
         <br />
         ステージをクリアすると次の物語が開くよ
       </p>
+      </div>
     </div>
   );
 }
