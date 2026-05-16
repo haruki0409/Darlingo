@@ -6,8 +6,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config.dart';
 import '../models/chapter.dart';
 import '../models/chapter_scene.dart';
+import '../models/node_story.dart';
 import '../models/partner.dart';
 import '../models/story.dart';
+import '../models/story_node.dart';
 
 /// Thrown when a backend request fails.
 class ApiException implements Exception {
@@ -105,6 +107,61 @@ class Api {
         .map((e) => Chapter.fromJson(e as Map<String, dynamic>))
         .toList();
     return (story, chapters);
+  }
+
+  // --- Node-based stories (the pivoted Story Mode) ---
+
+  /// List pre-made stories and the user's custom stories.
+  static Future<({List<NodeStory> premade, List<NodeStory> custom})>
+      listNodeStories() async {
+    final res = await http.get(
+      Uri.parse('${Config.apiUrl}/node-stories'),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw ApiException('Could not load stories (${res.statusCode})');
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    List<NodeStory> parse(String key) => (data[key] as List)
+        .map((e) => NodeStory.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (premade: parse('premade'), custom: parse('custom'));
+  }
+
+  /// Fetch a story's node sequence — generated on first play (~15s).
+  static Future<List<StoryNode>> getNodeStory(String storyId) async {
+    final res = await http.get(
+      Uri.parse('${Config.apiUrl}/node-stories/$storyId'),
+      headers: _headers,
+    );
+    if (res.statusCode != 200) {
+      throw ApiException('Could not load story (${res.statusCode})');
+    }
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return (data['nodes'] as List)
+        .map((e) => StoryNode.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Create a custom story from a premise — generates the nodes (~15s).
+  static Future<NodeStory> createNodeStory({
+    required String premise,
+    required String language,
+    required String level,
+  }) async {
+    final res = await http.post(
+      Uri.parse('${Config.apiUrl}/node-stories'),
+      headers: _headers,
+      body: jsonEncode({
+        'premise': premise,
+        'language': language,
+        'level': level,
+      }),
+    );
+    if (res.statusCode != 200) {
+      throw ApiException('Story creation failed (${res.statusCode})');
+    }
+    return NodeStory.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
   /// Begin (or resume) a chapter: generates its opening scene and opens the

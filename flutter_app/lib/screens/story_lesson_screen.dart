@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../models/story_node.dart';
+import '../services/api.dart';
 
 const _pink = Color(0xFFFF6BA0);
 const _purple = Color(0xFFA94BE0);
@@ -7,125 +9,17 @@ const _ink = Color(0xFF2A1638);
 const _inkSoft = Color(0xFF5C3A6E);
 const _muted = Color(0xFF80678F);
 
-sealed class StoryNode {
-  const StoryNode();
-}
-
-class NarrationNode extends StoryNode {
-  final String japanese;
-  final String korean;
-  const NarrationNode({required this.japanese, required this.korean});
-}
-
-class DialogueNode extends StoryNode {
-  final String speaker;
-  final String japanese;
-  final String reading;
-  final String korean;
-  const DialogueNode({
-    required this.speaker,
-    required this.japanese,
-    required this.reading,
-    required this.korean,
-  });
-}
-
-class QuizNode extends StoryNode {
-  final String prompt;
-  final List<String> options;
-  final int correctIndex;
-  final String explanation;
-  const QuizNode({
-    required this.prompt,
-    required this.options,
-    required this.correctIndex,
-    required this.explanation,
-  });
-}
-
-const List<StoryNode> _chapter1 = [
-  NarrationNode(
-    japanese: '東京・新宿駅、午後三時。',
-    korean: '도쿄, 신주쿠역. 오후 세 시.',
-  ),
-  NarrationNode(
-    japanese: 'はじめての東京。地図を見ながら歩いていると——',
-    korean: '첫 도쿄. 지도를 보면서 걷고 있는데——',
-  ),
-  DialogueNode(
-    speaker: 'あかり',
-    japanese: 'あっ……！ ごめんなさい！',
-    reading: 'A...! Gomen nasai!',
-    korean: '앗…! 죄송해요!',
-  ),
-  DialogueNode(
-    speaker: 'あかり',
-    japanese: '大丈夫ですか？',
-    reading: 'Daijoubu desu ka?',
-    korean: '괜찮으세요?',
-  ),
-  QuizNode(
-    prompt: '「大丈夫ですか？」의 뜻은?',
-    options: ['이름이 뭐예요?', '괜찮으세요?', '얼마예요?', '어디 가세요?'],
-    correctIndex: 1,
-    explanation: '大丈夫(だいじょうぶ) = 괜찮다. 누가 다치거나 곤란해 보일 때 자주 쓰는 표현이에요.',
-  ),
-  DialogueNode(
-    speaker: 'あかり',
-    japanese: 'よかった……。私、明里と言います。',
-    reading: 'Yokatta... Watashi, Akari to iimasu.',
-    korean: '다행이다…. 저, 아카리라고 해요.',
-  ),
-  DialogueNode(
-    speaker: 'あかり',
-    japanese: 'お名前は？',
-    reading: 'O-namae wa?',
-    korean: '이름은요?',
-  ),
-  QuizNode(
-    prompt: '"이름이 뭐예요?" 를 일본어로 가장 자연스럽게?',
-    options: ['いくらですか？', 'お名前は？', 'どこですか？', 'すみません'],
-    correctIndex: 1,
-    explanation: 'お名前(なまえ) = 이름. 「お名前は？」가 부드럽고 가장 자연스러워요.',
-  ),
-  DialogueNode(
-    speaker: 'あかり',
-    japanese: 'ふふっ、いい名前ですね。',
-    reading: 'Fufu, ii namae desu ne.',
-    korean: '후훗, 좋은 이름이네요.',
-  ),
-  DialogueNode(
-    speaker: 'あかり',
-    japanese: 'ねえ、もしよかったら……',
-    reading: 'Nee, moshi yokattara...',
-    korean: '저기, 괜찮으시면……',
-  ),
-  DialogueNode(
-    speaker: 'あかり',
-    japanese: '一緒に東京を案内しましょうか？',
-    reading: 'Issho ni Toukyou wo annai shimashou ka?',
-    korean: '같이 도쿄를 안내해 드릴까요?',
-  ),
-  QuizNode(
-    prompt: '「一緒に」의 뜻은?',
-    options: ['혼자서', '같이', '먼저', '나중에'],
-    correctIndex: 1,
-    explanation: '一緒(いっしょ)に = 함께, 같이. 누군가에게 같이 가자고 권할 때 쓰는 핵심 단어예요.',
-  ),
-  DialogueNode(
-    speaker: 'あかり',
-    japanese: 'やった！ じゃあ、行きましょう♪',
-    reading: 'Yatta! Jaa, ikimashou!',
-    korean: '신난다! 그럼, 가요♪',
-  ),
-  NarrationNode(
-    japanese: 'こうして、東京での小さな冒険が始まった。',
-    korean: '이렇게, 도쿄에서의 작은 모험이 시작되었다.',
-  ),
-];
-
+/// Plays a node-based story (narration / dialogue / quiz). The node sequence is
+/// loaded from the backend; the teammate's visual-novel UI is preserved.
 class StoryLessonScreen extends StatefulWidget {
-  const StoryLessonScreen({super.key});
+  const StoryLessonScreen({
+    super.key,
+    required this.storyId,
+    required this.storyTitle,
+  });
+
+  final String storyId;
+  final String storyTitle;
 
   @override
   State<StoryLessonScreen> createState() => _StoryLessonScreenState();
@@ -134,7 +28,10 @@ class StoryLessonScreen extends StatefulWidget {
 class _StoryLessonScreenState extends State<StoryLessonScreen>
     with TickerProviderStateMixin {
   late final AnimationController _shake;
-  final List<StoryNode> _story = _chapter1;
+
+  List<StoryNode> _story = [];
+  bool _loading = true;
+  String? _error;
 
   int _index = 0;
   int? _picked;
@@ -152,12 +49,31 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
       vsync: this,
       duration: const Duration(milliseconds: 380),
     );
+    _load();
   }
 
   @override
   void dispose() {
     _shake.dispose();
     super.dispose();
+  }
+
+  Future<void> _load() async {
+    try {
+      final nodes = await Api.getNodeStory(widget.storyId);
+      if (!mounted) return;
+      setState(() {
+        _story = nodes;
+        _loading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _error = '$e';
+        });
+      }
+    }
   }
 
   StoryNode get _node => _story[_index];
@@ -215,12 +131,17 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
       isDismissible: false,
       enableDrag: false,
       builder: (_) => _CompleteSheet(
+        title: widget.storyTitle,
         xp: _xp,
         correct: _correct,
         total: _totalQuizzes,
         onRestart: () {
           Navigator.of(context).pop();
           _restart();
+        },
+        onExit: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).pop();
         },
       ),
     );
@@ -234,7 +155,7 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
           borderRadius: BorderRadius.circular(20),
         ),
         title: const Text('나가시겠어요?'),
-        content: const Text('이번 챕터 진행 상황은 저장되지 않아요.'),
+        content: const Text('이번 이야기 진행 상황은 저장되지 않아요.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -243,18 +164,55 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(foregroundColor: _pink),
-            child: const Text('로그아웃'),
+            child: const Text('나가기'),
           ),
         ],
       ),
     );
-    if (leave == true) {
-      await Supabase.instance.client.auth.signOut();
-    }
+    if (leave == true && mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: _pink),
+              SizedBox(height: 16),
+              Text(
+                '이야기를 준비하고 있어요…',
+                style: TextStyle(color: Colors.white70),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    if (_error != null || _story.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              '이야기를 불러오지 못했어요.\n$_error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -264,8 +222,10 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
             'assets/images/japanese_woman1.jpg',
             fit: BoxFit.cover,
             alignment: const Alignment(0, -0.25),
+            errorBuilder: (_, __, ___) => const ColoredBox(
+              color: Color(0xFF2A1638),
+            ),
           ),
-          // 위/아래 어둡게: 상단 헤더 가독성 + 하단 카드 부드럽게
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -273,10 +233,10 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
                 end: Alignment.bottomCenter,
                 stops: const [0.0, 0.18, 0.45, 1.0],
                 colors: [
-                  Colors.black.withOpacity(0.55),
-                  Colors.black.withOpacity(0.0),
-                  Colors.black.withOpacity(0.05),
-                  Colors.black.withOpacity(0.78),
+                  Colors.black.withValues(alpha: 0.55),
+                  Colors.black.withValues(alpha: 0.0),
+                  Colors.black.withValues(alpha: 0.05),
+                  Colors.black.withValues(alpha: 0.78),
                 ],
               ),
             ),
@@ -312,10 +272,10 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
             child: Container(
               height: 12,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.35),
+                  color: Colors.white.withValues(alpha: 0.35),
                   width: 1,
                 ),
               ),
@@ -335,7 +295,7 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: _pink.withOpacity(0.55),
+                            color: _pink.withValues(alpha: 0.55),
                             blurRadius: 12,
                           ),
                         ],
@@ -391,12 +351,12 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.96),
+        color: Colors.white.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(26),
         border: Border.all(color: Colors.white, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.35),
+            color: Colors.black.withValues(alpha: 0.35),
             blurRadius: 28,
             offset: const Offset(0, 10),
           ),
@@ -415,15 +375,15 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _TagPill(
+            const _TagPill(
               label: 'narration',
               icon: Icons.menu_book_rounded,
-              bg: const Color(0xFF3D2548),
+              bg: Color(0xFF3D2548),
               fg: Colors.white,
             ),
             const SizedBox(height: 14),
             Text(
-              n.japanese,
+              n.target,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -434,7 +394,7 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              n.korean,
+              n.translation,
               style: const TextStyle(
                 fontSize: 13,
                 color: _muted,
@@ -465,7 +425,7 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
-                    color: _pink.withOpacity(0.45),
+                    color: _pink.withValues(alpha: 0.45),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -491,7 +451,7 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
             ),
             const SizedBox(height: 14),
             Text(
-              d.japanese,
+              d.target,
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -499,17 +459,19 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
                 height: 1.45,
               ),
             ),
-            const SizedBox(height: 6),
-            Text(
-              d.reading,
-              style: const TextStyle(
-                fontSize: 12.5,
-                color: Color(0xFFB066C9),
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
+            if (d.reading.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                d.reading,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: Color(0xFFB066C9),
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.2,
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -520,11 +482,11 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
               ),
               child: Row(
                 children: [
-                  const Text('🇰🇷', style: TextStyle(fontSize: 14)),
+                  const Text('💬', style: TextStyle(fontSize: 14)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      d.korean,
+                      d.translation,
                       style: const TextStyle(
                         fontSize: 13.5,
                         color: _inkSoft,
@@ -556,19 +518,22 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
                 (1 - _shake.value) *
                 ((((_shake.value * 8).floor()) % 2 == 0) ? 1 : -1)
             : 0.0;
-        return Transform.translate(offset: Offset(dx.toDouble(), 0), child: child);
+        return Transform.translate(
+          offset: Offset(dx.toDouble(), 0),
+          child: child,
+        );
       },
       child: _glassCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _TagPill(
+            const _TagPill(
               label: 'mini quiz',
               icon: Icons.bolt_rounded,
-              bg: const Color(0xFF3D2548),
+              bg: Color(0xFF3D2548),
               fg: Colors.white,
-              accent: const Color(0xFFFFC840),
+              accent: Color(0xFFFFC840),
             ),
             const SizedBox(height: 12),
             Text(
@@ -643,7 +608,7 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
                   elevation: 0,
                 ),
                 child: Text(
-                  _checked ? '続ける ・ 계속하기' : '확인',
+                  _checked ? '계속하기' : '확인',
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
@@ -762,9 +727,9 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.4),
+        color: Colors.black.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.25)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -804,7 +769,7 @@ class _TagPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: bg.withOpacity(0.92),
+        color: bg.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -878,15 +843,19 @@ class _NextHintState extends State<_NextHint>
 }
 
 class _CompleteSheet extends StatelessWidget {
+  final String title;
   final int xp;
   final int correct;
   final int total;
   final VoidCallback onRestart;
+  final VoidCallback onExit;
   const _CompleteSheet({
+    required this.title,
     required this.xp,
     required this.correct,
     required this.total,
     required this.onRestart,
+    required this.onExit,
   });
 
   @override
@@ -918,7 +887,7 @@ class _CompleteSheet extends StatelessWidget {
                 colors: [_pink, _purple],
               ).createShader(b),
               child: const Text(
-                'チャプター1 クリア！',
+                'Story complete!',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
@@ -927,9 +896,10 @@ class _CompleteSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              '도쿄에서의 첫 만남 완료',
-              style: TextStyle(fontSize: 13, color: _muted),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, color: _muted),
             ),
             const SizedBox(height: 22),
             Row(
@@ -945,32 +915,60 @@ class _CompleteSheet extends StatelessWidget {
                   icon: Icons.check_circle_rounded,
                   color: const Color(0xFF4CC468),
                   value: '$correct / $total',
-                  label: '正解',
+                  label: 'quiz',
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: onRestart,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _pink,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: onRestart,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _purple,
+                        side: const BorderSide(color: Color(0xFFE0C8F5)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        '다시 하기',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                child: const Text(
-                  'もう一度 ・ 다시 하기',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: onExit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _pink,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        '완료',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
@@ -999,7 +997,7 @@ class _Stat extends StatelessWidget {
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(18),
           ),
           child: Icon(icon, color: color, size: 28),

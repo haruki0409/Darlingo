@@ -6,7 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import init_db, run_migrations
-from app.routes import chapters, chat, conversations, partners, stories
+from app.routes import (
+    chapters,
+    chat,
+    conversations,
+    node_stories,
+    partners,
+    stories,
+)
 from app.seed import seed_partners
 
 logging.basicConfig(level=logging.INFO)
@@ -40,6 +47,7 @@ app.include_router(conversations.router)
 app.include_router(partners.router)
 app.include_router(stories.router)
 app.include_router(chapters.router)
+app.include_router(node_stories.router)
 
 
 @app.get("/health")
