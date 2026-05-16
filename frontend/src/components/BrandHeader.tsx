@@ -1,6 +1,6 @@
 export function BrandHeader({
-  tagline = "두근두근 ・ ドキドキ",
-  sub = "연애로 배우는 한국어 × 일본어",
+  tagline = "두근두근 / ドキドキ",
+  sub = "연애로 배우는 한국어 × 일본어 / 恋で学ぶ韓国語×日本語",
 }: {
   tagline?: string;
   sub?: string;
@@ -18,12 +18,12 @@ export function BrandHeader({
         </svg>
       </div>
       <h1 className="mt-5 text-4xl font-black tracking-tight gradient-text">
-        LingoDarling
+        Darlingo
       </h1>
-      <p className="mt-2 text-sm font-semibold tracking-widest text-lilac-500">
+      <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.28em] text-lilac-500">
         {tagline}
       </p>
-      <p className="mt-1 text-xs text-ink-500">{sub}</p>
+      <p className="mt-2 text-[13px] font-normal text-ink-500">{sub}</p>
     </div>
   );
 }

@@ -7,7 +7,6 @@ WebSocket /api/chat/voice  ↔  Gemini Live API.
 클라 → 서버 JSON 메시지:
     {"type":"audio","data":"<base64 PCM16 16kHz mono>"}
     {"type":"text","text":"..."}
-    {"type":"end_turn"}
 
 서버 → 클라 JSON 메시지: schemas.WsServer* 참고
 """

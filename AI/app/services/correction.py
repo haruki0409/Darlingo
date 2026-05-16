@@ -13,12 +13,15 @@
 from __future__ import annotations
 
 import json
+import logging
 
 from google import genai
 from google.genai import types
 
 from app.config import UTILITY_MODEL
 from app.schemas import Correction, CorrectionSpan
+
+logger = logging.getLogger(__name__)
 
 
 CORRECTION_PROMPT_JA = """\
@@ -114,8 +117,8 @@ async def correct(
         )
         raw = (resp.text or "").strip()
         data = json.loads(raw)
-    except (json.JSONDecodeError, Exception) as e:
-        print(f"[correction] failed: {e}", flush=True)
+    except (json.JSONDecodeError, Exception):
+        logger.exception("correction call failed")
         return None
 
     try:
@@ -131,6 +134,6 @@ async def correct(
             corrected=str(data.get("corrected") or text),
             errors=errors,
         )
-    except Exception as e:
-        print(f"[correction] parse failed: {e}", flush=True)
+    except Exception:
+        logger.exception("correction parse failed")
         return None

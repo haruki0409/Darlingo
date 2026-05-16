@@ -14,23 +14,25 @@ type Stage = {
   implemented: boolean;
 };
 
+// 맵을 한 화면에 스크롤 없이 담기 위해 전체 높이를 580px 로 축소.
+// y 좌표는 기존(820 기준) 대비 비율을 그대로 유지함.
 const STAGES: Stage[] = [
-  { id: 1, ko: "운명의 첫 만남", ja: "運命の出会い", x: 28, y: 740, implemented: true },
-  { id: 2, ko: "흔들리는 마음", ja: "揺れる心", x: 72, y: 585, implemented: true },
-  { id: 3, ko: "달빛 아래 고백", ja: "月夜の告白", x: 26, y: 415, implemented: true },
-  { id: 4, ko: "벚꽃길 산책", ja: "桜並木の散歩", x: 74, y: 250, implemented: false },
-  { id: 5, ko: "영원을 약속해", ja: "永遠の約束を", x: 50, y: 90, implemented: false },
+  { id: 1, ko: "운명의 첫 만남", ja: "運命の出会い", x: 28, y: 523, implemented: true },
+  { id: 2, ko: "흔들리는 마음", ja: "揺れる心", x: 72, y: 414, implemented: true },
+  { id: 3, ko: "달빛 아래 고백", ja: "月夜の告白", x: 26, y: 293, implemented: true },
+  { id: 4, ko: "벚꽃길 산책", ja: "桜並木の散歩", x: 74, y: 177, implemented: false },
+  { id: 5, ko: "영원을 약속해", ja: "永遠の約束を", x: 50, y: 115, implemented: false },
 ];
 
 const PROGRESS_KEY = "lingodarling:story-cleared";
-const MAP_HEIGHT = 820;
+const MAP_HEIGHT = 580;
 
 const PATH_D = `
-  M 28 740
-  C 28 680, 72 645, 72 585
-  C 72 520, 26 475, 26 415
-  C 26 350, 74 310, 74 250
-  C 74 190, 50 150, 50 90
+  M 28 523
+  C 28 480, 72 457, 72 414
+  C 72 368, 26 336, 26 293
+  C 26 247, 74 219, 74 177
+  C 74 158, 50 140, 50 115
 `;
 
 const BackIcon = () => (
@@ -57,7 +59,7 @@ const LockIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
-    className="h-6 w-6 text-ink-300"
+    className="h-5 w-5 text-ink-300"
   >
     <rect x="5" y="11" width="14" height="9" rx="2.5" />
     <path d="M8 11V8a4 4 0 0 1 8 0v3" />
@@ -82,15 +84,15 @@ function StageNode({
       <Link
         href={`/story/${stage.id}`}
         aria-label={`Stage ${stage.id}: ${stage.ko}`}
-        className="group relative grid h-[90px] w-[90px] place-items-center"
+        className="group relative grid h-[66px] w-[66px] place-items-center"
       >
-        <span className="absolute inset-[-10px] animate-pulse rounded-full bg-sakura-400/30 blur-md" />
-        <span className="animate-heartbeat relative grid h-[88px] w-[88px] place-items-center rounded-full bg-gradient-to-br from-sakura-500 to-lilac-500 shadow-[0_14px_30px_-6px_rgba(255,107,160,0.65)] ring-[5px] ring-white/80">
-          <span className="text-[28px] font-black text-white drop-shadow-sm">
+        <span className="absolute inset-[-8px] animate-pulse rounded-full bg-sakura-400/30 blur-md" />
+        <span className="animate-heartbeat relative grid h-[64px] w-[64px] place-items-center rounded-full bg-gradient-to-br from-sakura-500 to-lilac-500 shadow-[0_10px_22px_-6px_rgba(255,107,160,0.65)] ring-[3px] ring-white/80">
+          <span className="text-[20px] font-black text-white drop-shadow-sm">
             {stage.id}
           </span>
         </span>
-        <span className="absolute -bottom-3 whitespace-nowrap rounded-full bg-gradient-to-r from-sakura-500 to-lilac-500 px-3 py-1 text-[10px] font-extrabold tracking-[0.18em] text-white shadow-[0_6px_14px_-4px_rgba(255,107,160,0.55)]">
+        <span className="absolute -bottom-2.5 whitespace-nowrap rounded-full bg-gradient-to-r from-sakura-500 to-lilac-500 px-2.5 py-0.5 text-[9px] font-bold tracking-[0.18em] text-white shadow-[0_4px_10px_-3px_rgba(255,107,160,0.55)]">
           ♡ START
         </span>
       </Link>
@@ -99,13 +101,13 @@ function StageNode({
     orb = (
       <div
         aria-label={`Stage ${stage.id} 준비 중`}
-        className="relative grid h-[88px] w-[88px] cursor-not-allowed place-items-center rounded-full bg-gradient-to-br from-sakura-400/85 to-lilac-400/85 shadow-[0_12px_26px_-8px_rgba(255,107,160,0.5)] ring-[4px] ring-white/65"
+        className="relative grid h-[64px] w-[64px] cursor-not-allowed place-items-center rounded-full bg-gradient-to-br from-sakura-400/85 to-lilac-400/85 shadow-[0_10px_20px_-6px_rgba(255,107,160,0.5)] ring-[3px] ring-white/65"
       >
-        <span className="text-[26px] font-black text-white drop-shadow-sm">
+        <span className="text-[20px] font-black text-white drop-shadow-sm">
           {stage.id}
         </span>
-        <span className="absolute -bottom-3 whitespace-nowrap rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-extrabold tracking-[0.15em] text-lilac-600 shadow-md ring-1 ring-lilac-200">
-          준비 중 ・ 準備中
+        <span className="absolute -bottom-2.5 whitespace-nowrap rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold tracking-[0.15em] text-lilac-600 shadow-md ring-1 ring-lilac-200">
+          준비 중 / 準備中
         </span>
       </div>
     );
@@ -113,27 +115,47 @@ function StageNode({
     orb = (
       <div
         aria-label={`Stage ${stage.id} locked`}
-        className="relative grid h-[78px] w-[78px] cursor-not-allowed place-items-center rounded-full border-[1.5px] border-lilac-200/70 bg-white/55 shadow-inner backdrop-blur-sm"
+        className="relative grid h-[56px] w-[56px] cursor-not-allowed place-items-center rounded-full border-[1.5px] border-lilac-200/70 bg-white/55 shadow-inner backdrop-blur-sm"
       >
         <LockIcon />
-        <span className="absolute -bottom-2 grid h-6 min-w-[26px] place-items-center rounded-full bg-white/85 px-2 text-[10px] font-extrabold text-ink-500 shadow-sm ring-1 ring-lilac-100">
+        <span className="absolute -bottom-1.5 grid h-5 min-w-[22px] place-items-center rounded-full bg-white/85 px-1.5 text-[9px] font-bold text-ink-500 shadow-sm ring-1 ring-lilac-100">
           {stage.id}
         </span>
       </div>
     );
   }
 
+  // 라벨이 다음 노드 disc 와 충돌 방지: 노드 위치에 따라 좌/우/위로 흩뿌림.
+  //   좌측 노드(x < 40) → 라벨을 노드 *우측*에
+  //   우측 노드(x > 60) → 라벨을 노드 *좌측*에
+  //   가운데(x ≈ 50) → 라벨을 노드 *위*에 (마지막 5번 노드 등)
+  const labelSide =
+    stage.x < 40 ? "right" : stage.x > 60 ? "left" : "top";
+
   return (
     <div
-      className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
+      className="absolute -translate-x-1/2 -translate-y-1/2"
       style={{ left: `${stage.x}%`, top: stage.y }}
     >
-      {orb}
-      <div className="mt-5 flex flex-col items-center text-center">
-        <p className={`text-[13px] font-extrabold tracking-tight ${labelTone}`}>
+      {/* 노드 disc 는 항상 중앙 */}
+      <div className="relative flex flex-col items-center">
+        {orb}
+      </div>
+
+      {/* 라벨 — 노드 disc 옆/위로 배치 */}
+      <div
+        className={`pointer-events-none absolute flex w-[120px] flex-col ${
+          labelSide === "right"
+            ? "left-full top-1/2 ml-3 -translate-y-1/2 items-start text-left"
+            : labelSide === "left"
+              ? "right-full top-1/2 mr-3 -translate-y-1/2 items-end text-right"
+              : "bottom-full left-1/2 mb-3 -translate-x-1/2 items-center text-center"
+        }`}
+      >
+        <p className={`text-[11px] font-bold leading-tight tracking-tight ${labelTone}`}>
           {stage.ko}
         </p>
-        <p className={`mt-0.5 text-[10px] tracking-[0.18em] ${subTone}`}>
+        <p className={`mt-0.5 text-[9px] font-normal tracking-[0.16em] ${subTone}`}>
           {stage.ja}
         </p>
       </div>
@@ -180,9 +202,10 @@ export default function StoryStagesPage() {
   }
 
   return (
-    <div className="relative flex flex-1 flex-col px-5 pb-12 pt-5">
+    // 페이지는 부모(app-frame, 고정 높이) 채움. overflow-hidden 으로 스크롤 차단.
+    <div className="relative flex flex-1 flex-col overflow-hidden px-5 pb-4 pt-5">
       {/* Header */}
-      <div className="relative z-10 flex items-center gap-3">
+      <div className="relative z-10 flex shrink-0 items-center gap-3">
         <Link
           href="/home"
           aria-label="뒤로"
@@ -191,14 +214,14 @@ export default function StoryStagesPage() {
           <BackIcon />
         </Link>
         <div className="flex flex-col">
-          <p className="text-lg font-black tracking-tight text-ink-700">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-lilac-500">
             Story Mode
           </p>
-          <p className="text-[11px] font-semibold tracking-[0.22em] text-lilac-500">
-            스테이지 선택 ・ ステージ
+          <p className="text-base font-extrabold tracking-tight text-ink-700">
+            스테이지 선택 <span className="text-xs font-medium text-ink-500">/ ステージ</span>
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-1 rounded-full bg-white/70 px-3 py-1.5 text-[11px] font-extrabold text-lilac-600 shadow-sm backdrop-blur">
+        <div className="ml-auto flex items-center gap-1 rounded-full bg-white/70 px-3 py-1.5 text-[11px] font-bold text-lilac-600 shadow-sm backdrop-blur">
           <span>♡</span>
           <span>
             {cleared}
@@ -207,9 +230,9 @@ export default function StoryStagesPage() {
         </div>
       </div>
 
-      {/* Map */}
+      {/* Map — 고정 높이라 한 화면에 다 들어감. 스크롤 없음. */}
       <div
-        className="relative mx-auto mt-6 w-full max-w-[400px]"
+        className="relative mx-auto mt-3 w-full max-w-[360px] shrink-0"
         style={{ height: MAP_HEIGHT }}
       >
         {/* Winding path */}
@@ -250,28 +273,28 @@ export default function StoryStagesPage() {
         {/* Floating decorations on the map */}
         <span
           aria-hidden
-          className="animate-float-soft absolute right-[10%] top-[160px] text-2xl text-lilac-300/70"
+          className="animate-float-soft absolute right-[10%] top-[113px] text-xl text-lilac-300/70"
           style={{ animationDelay: "0.8s" }}
         >
           ✦
         </span>
         <span
           aria-hidden
-          className="animate-float-soft absolute left-[10%] top-[315px] text-xl text-lilac-400/70"
+          className="animate-float-soft absolute left-[10%] top-[223px] text-lg text-lilac-400/70"
           style={{ animationDelay: "2.6s" }}
         >
           ♡
         </span>
         <span
           aria-hidden
-          className="animate-float-soft absolute right-[7%] top-[490px] text-2xl text-sakura-400/80"
+          className="animate-float-soft absolute right-[7%] top-[347px] text-xl text-sakura-400/80"
           style={{ animationDelay: "1.4s" }}
         >
           💕
         </span>
         <span
           aria-hidden
-          className="animate-float-soft absolute left-[6%] top-[665px] text-3xl text-sakura-300/70"
+          className="animate-float-soft absolute left-[6%] top-[470px] text-2xl text-sakura-300/70"
         >
           桜
         </span>
@@ -286,16 +309,18 @@ export default function StoryStagesPage() {
         ))}
 
         {/* Goal banner above the final (topmost) stage */}
-        <div className="pointer-events-none absolute left-1/2 top-[10px] -translate-x-1/2">
-          <div className="flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-[10px] font-extrabold tracking-[0.22em] text-lilac-500 shadow-sm backdrop-blur">
+        <div className="pointer-events-none absolute left-1/2 top-[6px] -translate-x-1/2">
+          <div className="flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-0.5 text-[9px] font-bold tracking-[0.22em] text-lilac-500 shadow-sm backdrop-blur">
             <span>♔</span>
-            <span>엔딩 ・ エンディング</span>
+            <span>엔딩 / エンディング</span>
           </div>
         </div>
       </div>
 
-      <p className="mt-2 text-center text-[11px] text-ink-500/80">
+      <p className="mt-auto pt-2 text-center text-[10px] font-normal leading-snug text-ink-500/80">
         스테이지를 클리어하면 다음 이야기가 열려요 💞
+        <br />
+        ステージをクリアすると次の物語が開くよ
       </p>
     </div>
   );

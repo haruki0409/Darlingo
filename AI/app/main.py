@@ -9,6 +9,7 @@ Run:
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 
@@ -22,6 +23,12 @@ load_dotenv()
 
 if not os.getenv("GEMINI_API_KEY"):
     sys.exit("GEMINI_API_KEY missing. Copy .env.example to .env and set it.")
+
+# uvicorn 의 access 로그와 별개로 우리 app.* 모듈 로거를 INFO 로.
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+)
 
 
 app = FastAPI(
