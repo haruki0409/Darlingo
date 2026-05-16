@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778913767873,
+  "projectRoot": "C:\\Users\\user\\LingoDarling",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1778913767799,
+      "keyFiles": [
+        "requirements.txt"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1778913767801,
+      "keyFiles": [
+        "next.config.ts",
+        "package.json",
+        "postcss.config.mjs",
+        "tsconfig.json"
+      ]
+    },
+    "backend\\app": {
+      "path": "backend\\app",
+      "purpose": "Application code",
+      "fileCount": 4,
+      "lastAccessed": 1778913767803,
+      "keyFiles": [
+        "config.py",
+        "main.py",
+        "persona.py"
+      ]
+    },
+    "frontend\\app": {
+      "path": "frontend\\app",
+      "purpose": "Application code",
+      "fileCount": 3,
+      "lastAccessed": 1778913767806,
+      "keyFiles": [
+        "globals.css",
+        "layout.tsx",
+        "page.tsx"
+      ]
+    },
+    "frontend\\components": {
+      "path": "frontend\\components",
+      "purpose": "UI components",
+      "fileCount": 1,
+      "lastAccessed": 1778913767810,
+      "keyFiles": [
+        "ChatWindow.tsx"
+      ]
+    },
+    "frontend\\lib": {
+      "path": "frontend\\lib",
+      "purpose": "Library code",
+      "fileCount": 1,
+      "lastAccessed": 1778913767812,
+      "keyFiles": [
+        "useChatSocket.ts"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

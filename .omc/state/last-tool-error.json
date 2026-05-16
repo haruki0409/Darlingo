@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"Get-ChildItem C:\\\\Users\\\\user\\\\LingoDarling -Force | Select-Object Name, Mode | Format-Table -AutoSize\",\"description\":\"List root project directory contents\"}",
+  "error": "Exit code 127\n/usr/bin/bash: line 1: Get-ChildItem: command not found\n/usr/bin/bash: line 1: Select-Object: command not found\n/usr/bin/bash: line 1: Format-Table: command not found",
+  "timestamp": "2026-05-16T07:43:09.259Z",
+  "retry_count": 1
+}
