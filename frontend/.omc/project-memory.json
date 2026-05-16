@@ -42,7 +42,7 @@
     "runtime": null
   },
   "build": {
-    "buildCommand": "npm run build",
+    "buildCommand": "npx tsc --noEmit 2>&1 | tail -30",
     "testCommand": null,
     "lintCommand": "npm run lint",
     "devCommand": "npm run dev",
@@ -130,8 +130,14 @@
   "hotPaths": [
     {
       "path": "src\\app\\story\\3\\page.tsx",
-      "accessCount": 2,
-      "lastAccessed": 1778968468067,
+      "accessCount": 3,
+      "lastAccessed": 1778970923083,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\story\\page.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1778971391906,
       "type": "file"
     },
     {
@@ -144,12 +150,6 @@
       "path": "src\\app\\story\\2\\page.tsx",
       "accessCount": 1,
       "lastAccessed": 1778968374820,
-      "type": "file"
-    },
-    {
-      "path": "src\\app\\story\\page.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1778968380302,
       "type": "file"
     },
     {
@@ -186,6 +186,12 @@
       "path": "src\\app\\home\\page.tsx",
       "accessCount": 1,
       "lastAccessed": 1778968397246,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\story\\4\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778971365785,
       "type": "file"
     }
   ],
