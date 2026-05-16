@@ -18,7 +18,6 @@ from google import genai
 from google.genai import types
 
 from app.config import TEXT_MODEL
-from app.services import memory as memory_svc
 from app.services.history import Session
 from characters import CharacterProfile, build_system_instruction
 
@@ -34,13 +33,6 @@ def _build_contents(session: Session, new_user_message: str) -> list[types.Conte
         types.Content(role="user", parts=[types.Part(text=new_user_message)])
     )
     return contents
-
-
-def _build_system_instruction(
-    char: CharacterProfile, user_id: str, character_key: str
-) -> str:
-    # 메모리 주입 일시 비활성화 — 대화 유지에만 집중하는 단계.
-    return build_system_instruction(char)
 
 
 async def stream_reply(
@@ -60,15 +52,11 @@ async def stream_reply(
         yield {"type": "error", "message": "empty message"}
         return
 
-    system_instruction = _build_system_instruction(
-        char, session.user_id, session.character_key
-    )
-    contents = _build_contents(session, user_message)
-
     config = types.GenerateContentConfig(
-        system_instruction=system_instruction,
+        system_instruction=build_system_instruction(char),
         temperature=0.9,
     )
+    contents = _build_contents(session, user_message)
 
     chunks: list[str] = []
     failed = False

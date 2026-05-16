@@ -4,7 +4,7 @@ import { FloatingChars } from "@/components/FloatingChars";
 import { LangChips } from "@/components/LangChips";
 
 export const metadata = {
-  title: "회원가입 ・ 新規登録 | LingoDarling",
+  title: "회원가입 ・ 新規登録 | Darlingo",
 };
 
 export default function SignupPage() {

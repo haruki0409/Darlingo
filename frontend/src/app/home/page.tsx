@@ -156,7 +156,7 @@ export default function HomePage() {
             <HeartIcon size="h-10 w-10" />
           </div>
           <h1 className="mt-4 text-3xl font-black tracking-tight gradient-text">
-            LingoDarling
+            Darlingo
           </h1>
           <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.24em] text-lilac-500">
             How to learn
@@ -200,7 +200,7 @@ export default function HomePage() {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-ink-500/80">
-          © LingoDarling — 사랑은 가장 빠른 선생님 💞
+          © Darlingo — 사랑은 가장 빠른 선생님 💞
         </p>
       </main>
     </div>

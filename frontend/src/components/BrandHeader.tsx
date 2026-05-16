@@ -18,7 +18,7 @@ export function BrandHeader({
         </svg>
       </div>
       <h1 className="mt-5 text-4xl font-black tracking-tight gradient-text">
-        LingoDarling
+        Darlingo
       </h1>
       <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.28em] text-lilac-500">
         {tagline}

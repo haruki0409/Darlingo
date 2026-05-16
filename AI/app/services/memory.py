@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import datetime
 from pathlib import Path
@@ -31,6 +32,8 @@ from app.config import (
     SUMMARY_MIN_TURNS,
     UTILITY_MODEL,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ============================================================
@@ -224,8 +227,8 @@ async def consolidate(
         )
         raw = (resp.text or "").strip()
         data = json.loads(raw)
-    except (json.JSONDecodeError, Exception) as e:
-        print(f"[memory] consolidate failed for {user_id}/{character_key}: {e}", flush=True)
+    except (json.JSONDecodeError, Exception):
+        logger.exception("consolidate failed for %s/%s", user_id, character_key)
         return False
 
     summary = (data.get("summary") or "").strip()[:MAX_SUMMARY_CHARS]

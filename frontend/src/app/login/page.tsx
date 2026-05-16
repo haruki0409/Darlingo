@@ -4,7 +4,7 @@ import { FloatingChars } from "@/components/FloatingChars";
 import { LangChips } from "@/components/LangChips";
 
 export const metadata = {
-  title: "로그인 ・ ログイン | LingoDarling",
+  title: "로그인 ・ ログイン | Darlingo",
 };
 
 export default function LoginPage() {

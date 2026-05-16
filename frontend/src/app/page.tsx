@@ -51,7 +51,7 @@ export default function Home() {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-ink-500/80">
-          © LingoDarling — 사랑은 가장 빠른 선생님 💞
+          © Darlingo — 사랑은 가장 빠른 선생님 💞
         </p>
       </main>
     </div>
