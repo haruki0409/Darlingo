@@ -1,4 +1,4 @@
-# Bridge
+# LingoDarling
 
 An AI companion language-learning app — chat with a friendly AI companion while
 learning **Korean** and **Japanese**.
@@ -55,7 +55,7 @@ See `flutter_app/README.md` for details.
 ## Project layout
 
 ```
-bridge/
+LingoDarling/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py                  # FastAPI app, CORS, startup

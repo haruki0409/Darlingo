@@ -12,16 +12,16 @@ Future<void> main() async {
     url: Config.supabaseUrl,
     anonKey: Config.supabaseAnonKey,
   );
-  runApp(const BridgeApp());
+  runApp(const LingoDarlingApp());
 }
 
-class BridgeApp extends StatelessWidget {
-  const BridgeApp({super.key});
+class LingoDarlingApp extends StatelessWidget {
+  const LingoDarlingApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Bridge',
+      title: 'LingoDarling',
       theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
       home: const AuthGate(),
     );

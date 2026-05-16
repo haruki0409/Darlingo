@@ -1,6 +1,6 @@
-# Bridge — Flutter client
+# LingoDarling — Flutter client
 
-The Flutter client for Bridge, targeting **Web** and **Android** from one
+The Flutter client for LingoDarling, targeting **Web** and **Android** from one
 codebase. Talks to the FastAPI backend over a WebSocket.
 
 > The `frontend/` directory (Next.js/React) is kept as a **reference only**.
