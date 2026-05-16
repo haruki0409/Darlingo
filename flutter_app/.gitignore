@@ -33,6 +33,10 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Secrets / local config (DO NOT COMMIT)
+.env
+dart_define.json
+
 # Symbolication related
 app.*.symbols
 

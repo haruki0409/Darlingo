@@ -130,7 +130,8 @@ class _LoginScreenState extends State<LoginScreen>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFF7AAD).withOpacity(0.5),
+                                color: const Color(0xFFFF7AAD)
+                                    .withValues(alpha: 0.5),
                                 blurRadius: 28,
                                 offset: const Offset(0, 10),
                               ),
@@ -184,15 +185,16 @@ class _LoginScreenState extends State<LoginScreen>
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.78),
+                          color: Colors.white.withValues(alpha: 0.78),
                           borderRadius: BorderRadius.circular(28),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFB565E8).withOpacity(0.15),
+                              color: const Color(0xFFB565E8)
+                                  .withValues(alpha: 0.15),
                               blurRadius: 30,
                               offset: const Offset(0, 12),
                             ),
@@ -236,8 +238,10 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.sentiment_dissatisfied_rounded,
-                                        color: Color(0xFFD64C7A), size: 18),
+                                    const Icon(
+                                        Icons.sentiment_dissatisfied_rounded,
+                                        color: Color(0xFFD64C7A),
+                                        size: 18),
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
@@ -279,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       : [
                                           BoxShadow(
                                             color: const Color(0xFFFF6BA0)
-                                                .withOpacity(0.4),
+                                                .withValues(alpha: 0.4),
                                             blurRadius: 16,
                                             offset: const Offset(0, 6),
                                           ),
@@ -346,13 +350,13 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                       const SizedBox(height: 20),
                       // 하단 푸터
-                      Row(
+                      const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
+                        children: const [
                           _LangChip('한국어', Color(0xFFFF8FB8)),
                           SizedBox(width: 10),
                           Icon(Icons.swap_horiz_rounded,
-                              color: Color(0xFFB066C9), size: 18),
+                              color: const Color(0xFFB066C9), size: 18),
                           SizedBox(width: 10),
                           _LangChip('日本語', Color(0xFFB565E8)),
                         ],
@@ -422,7 +426,7 @@ class _FloatingChar extends StatelessWidget {
       text,
       style: TextStyle(
         fontSize: size,
-        color: color?.withOpacity(0.55),
+        color: color?.withValues(alpha: 0.55),
         fontWeight: FontWeight.w700,
       ),
     );
@@ -439,9 +443,9 @@ class _LangChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.4), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
       ),
       child: Text(
         label,
