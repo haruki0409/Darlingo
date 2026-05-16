@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter run *)",
+      "Bash(grep -E --line-buffered \"Launching|Built|Installing|Hot reload|Unhandled Exception|FAILURE|BUILD FAILED|Error:|error •|lib/.*\\\\\\\\.dart:[0-9]+|Connection refused|No supported devices\")",
+      "Bash(flutter emulators *)",
+      "Bash(grep -E --line-buffered \"Launching|Built|Installing|Hot reload|Unhandled Exception|FAILURE|BUILD FAILED|Error:|error •|lib/.*\\\\\\\\.dart:[0-9]+|No supported devices\")",
+      "Bash(python -m scripts.seed_premade_nodes)"
+    ]
+  }
+}

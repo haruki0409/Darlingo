@@ -144,7 +144,9 @@ class Api {
   }
 
   /// Create a custom story from a premise — generates the nodes (~15s).
-  static Future<NodeStory> createNodeStory({
+  /// Returns the story metadata plus the generated node sequence so callers
+  /// can launch the lesson screen without a follow-up fetch.
+  static Future<({NodeStory story, List<StoryNode> nodes})> createNodeStory({
     required String premise,
     required String language,
     required String level,
@@ -161,7 +163,12 @@ class Api {
     if (res.statusCode != 200) {
       throw ApiException('Story creation failed (${res.statusCode})');
     }
-    return NodeStory.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    final story = NodeStory.fromJson(data);
+    final nodes = ((data['nodes'] as List?) ?? const [])
+        .map((e) => StoryNode.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (story: story, nodes: nodes);
   }
 
   /// Begin (or resume) a chapter: generates its opening scene and opens the

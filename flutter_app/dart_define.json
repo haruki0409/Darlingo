@@ -1,0 +1,6 @@
+{
+  "SUPABASE_URL": "https://tqyelthwfjcbguwewmwk.supabase.co",
+  "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxeWVsdGh3ZmpjYmd1d2V3bXdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTMyOTQsImV4cCI6MjA5NDQ4OTI5NH0.0Iui7cl_HX8uCpZfdCxHgrC9d-QNnzl7qJ9yWGQAtpo",
+  "API_URL": "http://10.0.2.2:8000",
+  "WS_URL": "ws://10.0.2.2:8000/ws/chat"
+}

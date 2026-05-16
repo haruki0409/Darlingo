@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 
-import '../../models/node_story.dart';
+import '../../models/story_node.dart';
 import '../../services/api.dart';
 import '../../theme.dart';
+
+/// What CustomStoryScreen pops with when generation succeeds.
+class CustomStoryResult {
+  const CustomStoryResult({required this.title, required this.nodes});
+  final String title;
+  final List<StoryNode> nodes;
+}
 
 const _languages = {'ja': '🇯🇵 日本語 (Japanese)', 'ko': '🇰🇷 한국어 (Korean)'};
 const _levels = ['beginner', 'intermediate', 'advanced'];
 
 /// Create a custom node-based story from a free-text premise. On success it
-/// pops with the created [NodeStory].
+/// pops with a [CustomStoryResult] holding the title and generated nodes.
 class CustomStoryScreen extends StatefulWidget {
   const CustomStoryScreen({super.key});
 
@@ -40,12 +47,16 @@ class _CustomStoryScreenState extends State<CustomStoryScreen> {
       _error = null;
     });
     try {
-      final story = await Api.createNodeStory(
+      final result = await Api.createNodeStory(
         premise: premise,
         language: _language,
         level: _level,
       );
-      if (mounted) Navigator.of(context).pop(story);
+      if (mounted) {
+        Navigator.of(context).pop(
+          CustomStoryResult(title: result.story.title, nodes: result.nodes),
+        );
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -157,7 +168,7 @@ class _CustomStoryScreenState extends State<CustomStoryScreen> {
     required ValueChanged<String> onChanged,
   }) =>
       DropdownButtonFormField<String>(
-        initialValue: value,
+        value: value,
         isExpanded: true,
         items: items
             .map((e) => DropdownMenuItem(value: e, child: Text(labelOf(e))))

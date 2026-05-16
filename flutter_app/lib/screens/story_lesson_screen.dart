@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/story_node.dart';
-import '../services/api.dart';
 
 const _pink = Color(0xFFFF6BA0);
 const _purple = Color(0xFFA94BE0);
@@ -9,16 +8,17 @@ const _ink = Color(0xFF2A1638);
 const _inkSoft = Color(0xFF5C3A6E);
 const _muted = Color(0xFF80678F);
 
-/// Plays a node-based story (narration / dialogue / quiz). The node sequence is
-/// loaded from the backend; the teammate's visual-novel UI is preserved.
+/// Plays a node-based story (narration / dialogue / quiz). Nodes are passed in
+/// directly — caller is responsible for fetching/providing them, so this
+/// screen does not hit the network.
 class StoryLessonScreen extends StatefulWidget {
   const StoryLessonScreen({
     super.key,
-    required this.storyId,
+    required this.nodes,
     required this.storyTitle,
   });
 
-  final String storyId;
+  final List<StoryNode> nodes;
   final String storyTitle;
 
   @override
@@ -28,10 +28,7 @@ class StoryLessonScreen extends StatefulWidget {
 class _StoryLessonScreenState extends State<StoryLessonScreen>
     with TickerProviderStateMixin {
   late final AnimationController _shake;
-
-  List<StoryNode> _story = [];
-  bool _loading = true;
-  String? _error;
+  late final List<StoryNode> _story = widget.nodes;
 
   int _index = 0;
   int? _picked;
@@ -49,31 +46,12 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
       vsync: this,
       duration: const Duration(milliseconds: 380),
     );
-    _load();
   }
 
   @override
   void dispose() {
     _shake.dispose();
     super.dispose();
-  }
-
-  Future<void> _load() async {
-    try {
-      final nodes = await Api.getNodeStory(widget.storyId);
-      if (!mounted) return;
-      setState(() {
-        _story = nodes;
-        _loading = false;
-      });
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = '$e';
-        });
-      }
-    }
   }
 
   StoryNode get _node => _story[_index];
@@ -174,25 +152,7 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: _pink),
-              SizedBox(height: 16),
-              Text(
-                '이야기를 준비하고 있어요…',
-                style: TextStyle(color: Colors.white70),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    if (_error != null || _story.isEmpty) {
+    if (_story.isEmpty) {
       return Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
@@ -200,13 +160,13 @@ class _StoryLessonScreenState extends State<StoryLessonScreen>
           elevation: 0,
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        body: Center(
+        body: const Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Text(
-              '이야기를 불러오지 못했어요.\n$_error',
+              '이 스토리는 아직 준비되지 않았어요.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70),
+              style: TextStyle(color: Colors.white70),
             ),
           ),
         ),
