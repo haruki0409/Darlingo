@@ -55,8 +55,8 @@ class _StoryPickerScreenState extends State<StoryPickerScreen> {
     return SakuraScaffold(
       appBar: AppBar(title: const Text('Stories')),
       body: SafeArea(
-        child: FutureBuilder<
-            ({List<NodeStory> premade, List<NodeStory> custom})>(
+        child:
+            FutureBuilder<({List<NodeStory> premade, List<NodeStory> custom})>(
           future: _future,
           builder: (context, snap) {
             if (snap.connectionState != ConnectionState.done) {
