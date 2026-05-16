@@ -1,0 +1,224 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778959215752,
+  "projectRoot": "C:\\Users\\user\\hackathon\\LingoDarling",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "AI": {
+      "path": "AI",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1778959215611,
+      "keyFiles": [
+        "characters.py",
+        "README.md",
+        "requirements.txt",
+        "voices.py"
+      ]
+    },
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1778959215612,
+      "keyFiles": [
+        "Dockerfile",
+        "requirements.txt"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 4,
+      "lastAccessed": 1778959215621,
+      "keyFiles": [
+        "CURRICULUM_MODE_PLAN.md",
+        "lingodarling-apk-qr.png",
+        "STORY_IMAGE_GENERATION_HANDOFF.md",
+        "STORY_MODE_PLAN.md"
+      ]
+    },
+    "flutter_app": {
+      "path": "flutter_app",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1778959215624,
+      "keyFiles": [
+        "analysis_options.yaml",
+        "dart_define.json",
+        "pubspec.yaml",
+        "README.md"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 12,
+      "lastAccessed": 1778959215627,
+      "keyFiles": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "eslint.config.mjs",
+        "next-env.d.ts",
+        "next.config.ts"
+      ]
+    },
+    "AI\\app": {
+      "path": "AI\\app",
+      "purpose": "Application code",
+      "fileCount": 5,
+      "lastAccessed": 1778959215631,
+      "keyFiles": [
+        "config.py",
+        "deps.py",
+        "main.py"
+      ]
+    },
+    "backend\\app": {
+      "path": "backend\\app",
+      "purpose": "Application code",
+      "fileCount": 11,
+      "lastAccessed": 1778959215640,
+      "keyFiles": [
+        "auth.py",
+        "config.py",
+        "db.py"
+      ]
+    },
+    "backend\\scripts": {
+      "path": "backend\\scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 3,
+      "lastAccessed": 1778959215645,
+      "keyFiles": [
+        "seed_premade_nodes.py",
+        "smoke_test.py",
+        "__init__.py"
+      ]
+    },
+    "flutter_app\\assets": {
+      "path": "flutter_app\\assets",
+      "purpose": "Static assets",
+      "fileCount": 0,
+      "lastAccessed": 1778959215649,
+      "keyFiles": []
+    },
+    "flutter_app\\lib": {
+      "path": "flutter_app\\lib",
+      "purpose": "Library code",
+      "fileCount": 3,
+      "lastAccessed": 1778959215655,
+      "keyFiles": [
+        "config.dart",
+        "main.dart",
+        "theme.dart"
+      ]
+    },
+    "frontend\\node_modules": {
+      "path": "frontend\\node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1778959215663,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "frontend\\src\\app\\story\\page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1778960213147,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\src\\app\\story\\1\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778959732663,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\public\\images\\stage2-main-happy.png",
+      "accessCount": 1,
+      "lastAccessed": 1778959758600,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\public\\images\\stage2-main-normal.png",
+      "accessCount": 1,
+      "lastAccessed": 1778959759323,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\public\\images\\stage2-main-sad.png",
+      "accessCount": 1,
+      "lastAccessed": 1778959759775,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\public\\images\\stage2-subchar-normal.PNG",
+      "accessCount": 1,
+      "lastAccessed": 1778959773926,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\public\\images\\stage1-cafe-happy.png",
+      "accessCount": 1,
+      "lastAccessed": 1778959775412,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\public\\images\\stage2-subchar-shy.PNG",
+      "accessCount": 1,
+      "lastAccessed": 1778959776184,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\public\\images\\stage2-subchar-mad.PNG",
+      "accessCount": 1,
+      "lastAccessed": 1778959776854,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\src\\app\\story\\2\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778960180451,
+      "type": "file"
+    },
+    {
+      "path": "frontend\\package.json",
+      "accessCount": 1,
+      "lastAccessed": 1778960222635,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

@@ -22,14 +22,23 @@ class Base(DeclarativeBase):
     """Base class all ORM models inherit from."""
 
 
-# pool_pre_ping recycles dead connections (Supabase drops idle ones).
-# If you switch to the Supabase pooler (port 6543, transaction mode), add
-# connect_args={"statement_cache_size": 0} because asyncpg prepared
-# statements are not supported there.
+# Connected through the Supabase pooler in transaction mode (port 6543),
+# which multiplexes connections and is the right choice for a concurrent /
+# autoscaling backend.
+#  - statement_cache_size=0: transaction mode does not support asyncpg's
+#    server-side prepared statements, so caching them must be disabled.
+#  - pool_pre_ping recycles connections the pooler has dropped.
+#  - pool_size/max_overflow cap connections per process; with N backend
+#    instances total connections are N * (pool_size + max_overflow), so keep
+#    this modest and watch it against the Supabase connection limit.
 engine = create_async_engine(
     settings.database_url,
     echo=False,
     pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=1800,
+    connect_args={"statement_cache_size": 0},
 )
 
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)

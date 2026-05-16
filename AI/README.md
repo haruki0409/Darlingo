@@ -1,8 +1,8 @@
-# LingoDarling AI
+# Darlingo AI
 
 Voice + text companion chat backend powered by **Google Gemini Live API**.
 Provides the AI persona, real-time voice streaming, and text chat endpoints
-that the Flutter client calls.
+that the Next.js client calls.
 
 This is an **API-only** service. There is no built-in UI in this folder.
 
@@ -95,12 +95,12 @@ To add a character, append a new entry to the `CHARACTERS` dict.
 ## Known limitations
 
 - **Native-audio Live API multi-turn quirks**: certain inputs occasionally
-  trigger a server-side `1011 Internal error`. The client (Flutter) should
+  trigger a server-side `1011 Internal error`. The client should
   reconnect transparently. See git history for the receive-loop / config
   tuning we did to mitigate this.
 - **In-memory sessions**: session state lives in process memory. Restarting
   the server drops every active session. Long-term persistence belongs in
-  the main LingoDarling backend (Supabase), not here.
+  the main Darlingo backend (Supabase), not here.
 - **Per-user file memory**: `memory/{user_id}/{character_key}/` holds
   `summary.md` and `facts.md`. Memory injection is currently disabled in
   the chat path (see code comments) until the consolidation prompt is

@@ -1,4 +1,4 @@
-# LingoDarling backend — container image for Google Cloud Run.
+# Darlingo backend — container image for Google Cloud Run.
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \

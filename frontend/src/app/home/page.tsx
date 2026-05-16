@@ -103,6 +103,7 @@ export default function HomePage() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -115,6 +116,7 @@ export default function HomePage() {
         return;
       }
       setEmail(data.session.user.email ?? null);
+      setIsGuest(data.session.user.is_anonymous === true);
       setReady(true);
     });
 
@@ -123,6 +125,7 @@ export default function HomePage() {
         router.replace("/login");
       } else {
         setEmail(session.user.email ?? null);
+        setIsGuest(session.user.is_anonymous === true);
       }
     });
 
@@ -156,7 +159,7 @@ export default function HomePage() {
             <HeartIcon size="h-10 w-10" />
           </div>
           <h1 className="mt-4 text-3xl font-black tracking-tight gradient-text">
-            LingoDarling
+            Darlingo
           </h1>
           <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.24em] text-lilac-500">
             How to learn
@@ -184,11 +187,18 @@ export default function HomePage() {
         </div>
 
         <div className="mt-7 flex flex-col items-center gap-2">
-          {email && (
+          {isGuest ? (
             <p className="text-[11px] font-normal text-ink-500/80">
-              <span className="mr-1">💌</span>
-              {email}
+              <span className="mr-1">💗</span>
+              게스트 ・ ゲスト
             </p>
+          ) : (
+            email && (
+              <p className="text-[11px] font-normal text-ink-500/80">
+                <span className="mr-1">💌</span>
+                {email}
+              </p>
+            )
           )}
           <button
             type="button"
@@ -200,7 +210,7 @@ export default function HomePage() {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-ink-500/80">
-          © LingoDarling — 사랑은 가장 빠른 선생님 💞
+          © Darlingo — 사랑은 가장 빠른 선생님 💞
         </p>
       </main>
     </div>

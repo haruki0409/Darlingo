@@ -18,13 +18,13 @@ type Stage = {
 // y 좌표는 기존(820 기준) 대비 비율을 그대로 유지함.
 const STAGES: Stage[] = [
   { id: 1, ko: "운명의 첫 만남", ja: "運命の出会い", x: 28, y: 523, implemented: true },
-  { id: 2, ko: "흔들리는 마음", ja: "揺れる心", x: 72, y: 414, implemented: false },
-  { id: 3, ko: "달빛 아래 고백", ja: "月夜の告白", x: 26, y: 293, implemented: false },
+  { id: 2, ko: "흔들리는 마음", ja: "揺れる心", x: 72, y: 414, implemented: true },
+  { id: 3, ko: "달빛 아래 고백", ja: "月夜の告白", x: 26, y: 293, implemented: true },
   { id: 4, ko: "벚꽃길 산책", ja: "桜並木の散歩", x: 74, y: 177, implemented: false },
   { id: 5, ko: "영원을 약속해", ja: "永遠の約束を", x: 50, y: 115, implemented: false },
 ];
 
-const PROGRESS_KEY = "lingodarling:story-cleared";
+const PROGRESS_KEY = "darlingo:story-cleared";
 const MAP_HEIGHT = 580;
 
 const PATH_D = `

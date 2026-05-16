@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     database_url: str = ""
     supabase_url: str = ""
     supabase_anon_key: str = ""
+    # Supabase legacy JWT secret (Project Settings -> API -> JWT Secret).
+    # When set, JWTs are verified locally with no per-request HTTP call;
+    # when empty, auth falls back to the slower /auth/v1/user lookup.
+    supabase_jwt_secret: str = ""
 
 
 settings = Settings()

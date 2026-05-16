@@ -1,7 +1,7 @@
 """
-LingoDarling AI — FastAPI entrypoint.
+Darlingo AI — FastAPI entrypoint.
 
-API-only backend. The Flutter app (or any HTTP/WS client) calls these endpoints.
+API-only backend. The Next.js app (or any HTTP/WS client) calls these endpoints.
 
 Run:
     uvicorn app.main:app --reload --port 8000
@@ -9,6 +9,7 @@ Run:
 
 from __future__ import annotations
 
+import logging
 import os
 import sys
 
@@ -23,14 +24,20 @@ load_dotenv()
 if not os.getenv("GEMINI_API_KEY"):
     sys.exit("GEMINI_API_KEY missing. Copy .env.example to .env and set it.")
 
+# uvicorn 의 access 로그와 별개로 우리 app.* 모듈 로거를 INFO 로.
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+)
+
 
 app = FastAPI(
-    title="LingoDarling AI",
+    title="Darlingo AI",
     description="Voice + text companion chat backed by Google Gemini Live API.",
     version="0.1.0",
 )
 
-# CORS — open by default so the Flutter web/mobile client can call freely.
+# CORS — open by default so the Next.js client can call freely.
 # Lock down in production via ALLOWED_ORIGINS env var (comma-separated).
 _origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
 _allow_origins = [o.strip() for o in _origins_env.split(",") if o.strip()] or ["*"]
@@ -51,7 +58,7 @@ app.include_router(voice_chat.router)
 @app.get("/")
 def root() -> dict:
     return {
-        "service": "LingoDarling AI",
+        "service": "Darlingo AI",
         "docs": "/docs",
         "endpoints": [
             "GET  /api/characters",

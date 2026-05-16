@@ -1,6 +1,6 @@
-# LingoDarling — Story Mode Plan
+# Darlingo — Story Mode Plan
 
-> The plan for turning LingoDarling into a visual-novel language-learning app
+> The plan for turning Darlingo into a visual-novel language-learning app
 > with AI-generated, customizable, chaptered stories.
 
 ## 1. Vision

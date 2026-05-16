@@ -1,5 +1,5 @@
 # ============================================================
-#  LingoDarling — root .gitignore
+#  Darlingo — root .gitignore
 # ============================================================
 
 # ── Secrets (전체 트리에서 차단) ──
@@ -29,17 +29,6 @@ node_modules/
 out/
 build/
 .vercel
-
-# ── Flutter ──
-flutter_app/.dart_tool/
-flutter_app/build/
-flutter_app/.flutter-plugins
-flutter_app/.flutter-plugins-dependencies
-flutter_app/.packages
-flutter_app/pubspec.lock
-flutter_app/run_web.sh
-flutter_app/run_web_shared.sh
-flutter_app/run_android.sh
 
 # ── Per-user runtime data (AI 메모리 등) ──
 AI/memory/*/

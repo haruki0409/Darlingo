@@ -1,5 +1,5 @@
 /**
- * LingoDarling AI 서버 클라이언트.
+ * Darlingo AI 서버 클라이언트.
  *
  * AI/ 폴더(FastAPI + Gemini Live)의 모든 엔드포인트를 프론트에서 호출하는 얇은 래퍼.
  *   - GET    /api/characters                     캐릭터 목록

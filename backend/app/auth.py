@@ -1,14 +1,19 @@
 """Supabase authentication.
 
-We verify a Supabase-issued JWT by asking Supabase who it belongs to
-(`GET /auth/v1/user`). This avoids managing JWT signing keys locally and is
-always correct — the small HTTP cost is fine for a hackathon.
+Preferred path: verify the Supabase-issued JWT *locally* with the project's
+JWT secret (HS256) — no network call, so it scales to many concurrent users
+and is not subject to Supabase Auth rate limits.
+
+Fallback path: if `supabase_jwt_secret` is not configured, validate the token
+by calling `GET /auth/v1/user`. Correct, but a per-request HTTP round-trip —
+fine for low traffic, a bottleneck under load.
 """
 
 import logging
 import uuid
 
 import httpx
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,12 +26,45 @@ logger = logging.getLogger(__name__)
 
 bearer_scheme = HTTPBearer()
 
+_UNAUTHORIZED = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Invalid or expired token",
+)
 
-async def verify_supabase_token(token: str) -> dict:
-    """Validate a Supabase JWT and return the Supabase user record.
 
-    Raises HTTPException(401) if the token is missing, invalid, or expired.
+def decode_supabase_jwt(token: str) -> dict:
+    """Verify a Supabase JWT locally and return a normalized user dict.
+
+    Supabase signs user tokens HS256 with the project JWT secret and sets
+    `aud="authenticated"`. Anonymous users get the same shape with no email
+    and `is_anonymous=True`.
+
+    Returns `{"id", "email", "is_anonymous"}`. Raises HTTPException(401) for
+    any missing/invalid/expired token.
     """
+    try:
+        payload = jwt.decode(
+            token,
+            settings.supabase_jwt_secret,
+            algorithms=["HS256"],
+            audience="authenticated",
+        )
+    except jwt.PyJWTError as exc:
+        logger.info("Local JWT verification failed: %s", exc)
+        raise _UNAUTHORIZED from exc
+
+    sub = payload.get("sub")
+    if not sub:
+        raise _UNAUTHORIZED
+    return {
+        "id": sub,
+        "email": payload.get("email"),
+        "is_anonymous": payload.get("is_anonymous", False),
+    }
+
+
+async def _verify_via_http(token: str) -> dict:
+    """Fallback: validate the token through Supabase's /auth/v1/user."""
     url = f"{settings.supabase_url}/auth/v1/user"
     headers = {
         "Authorization": f"Bearer {token}",
@@ -34,13 +72,26 @@ async def verify_supabase_token(token: str) -> dict:
     }
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(url, headers=headers)
-
     if resp.status_code != 200:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-    return resp.json()
+        raise _UNAUTHORIZED
+    data = resp.json()
+    return {
+        "id": data["id"],
+        "email": data.get("email"),
+        "is_anonymous": data.get("is_anonymous", False),
+    }
+
+
+async def verify_supabase_token(token: str) -> dict:
+    """Validate a Supabase JWT and return a normalized user dict.
+
+    Uses fast local verification when a JWT secret is configured, otherwise
+    falls back to the Supabase HTTP lookup. Raises HTTPException(401) if the
+    token is missing, invalid, or expired.
+    """
+    if settings.supabase_jwt_secret:
+        return decode_supabase_jwt(token)
+    return await _verify_via_http(token)
 
 
 async def get_or_create_user(session: AsyncSession, supabase_user: dict) -> User:

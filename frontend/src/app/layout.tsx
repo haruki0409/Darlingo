@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LingoDarling ・ 두근두근 ドキドキ",
+  title: "Darlingo ・ 두근두근 ドキドキ",
   description: "연애로 배우는 한국어 × 일본어",
 };
 

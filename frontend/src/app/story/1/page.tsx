@@ -48,7 +48,7 @@ const BG_SRC: Record<Bg, string> = {
   "cafe-mad": "/images/stage1-cafe-mad.png",
 };
 
-const PROGRESS_KEY = "lingodarling:story-cleared";
+const PROGRESS_KEY = "darlingo:story-cleared";
 const STAGE_ID = 1;
 
 const SCRIPT: Beat[] = [

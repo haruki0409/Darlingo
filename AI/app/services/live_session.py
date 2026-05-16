@@ -29,6 +29,8 @@ Live API config:
 from __future__ import annotations
 
 import asyncio
+import base64
+import logging
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -36,50 +38,41 @@ from google import genai
 from google.genai import types
 
 from app.config import INPUT_SAMPLE_RATE
-from app.services import memory as memory_svc
 from app.services.history import Session
 from characters import CharacterProfile, build_system_instruction
 
+logger = logging.getLogger(__name__)
 
 # 이벤트 타입은 schemas.WsServer* 와 1:1
 EventCallback = Callable[[dict], Awaitable[None]]
 
 
-def build_live_config(
-    char: CharacterProfile,
-    user_id: str,
-    character_key: str,
-) -> types.LiveConnectConfig:
+def build_live_config(char: CharacterProfile) -> types.LiveConnectConfig:
     """
     Live API 설정. 한 세션으로 끝까지 유지하는 단일 연결 방식.
 
     포함:
       - response_modalities: ["AUDIO"]
       - speech_config: 캐릭터별 voice
-      - system_instruction: 캐릭터 + 장기 메모리
+      - system_instruction: 캐릭터 프롬프트
       - input/output_audio_transcription: 사용자/캐릭터 자막
       - thinking_config: off (native-audio 응답에 thought 파트 섞이는 거 방지)
+      - context_window_compression: 장시간 세션 안정화 + 턴 boundary 개선
     """
-    # 메모리 주입 일시 비활성화: 오염된 summary/facts 가 모델 응답 톤을 오염시키고
-    # 1011 internal error 의 원인 가능성. 대화 유지에만 집중하는 단계.
-    base_si = build_system_instruction(char)
-    system_text = base_si
-
     speech_config = types.SpeechConfig(
         voice_config=types.VoiceConfig(
             prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=char.voice)
         ),
     )
-
     return types.LiveConnectConfig(
         response_modalities=["AUDIO"],
         speech_config=speech_config,
-        system_instruction=types.Content(parts=[types.Part(text=system_text)]),
+        system_instruction=types.Content(
+            parts=[types.Part(text=build_system_instruction(char))]
+        ),
         input_audio_transcription=types.AudioTranscriptionConfig(),
         output_audio_transcription=types.AudioTranscriptionConfig(),
         thinking_config=types.ThinkingConfig(thinking_budget=0),
-        # context_window_compression: 장시간 세션 안정화 + 일부 케이스에서
-        # turn boundary 처리가 개선된다는 보고. 멀티턴 무시 우회 시도.
         context_window_compression=types.ContextWindowCompressionConfig(
             sliding_window=types.SlidingWindow(),
         ),
@@ -111,23 +104,17 @@ class LiveBridge:
         self._live = None
         self._cm = None
         self._recv_task: asyncio.Task | None = None
-
-        # 한 턴의 input transcription 누적 (turn_complete 또는 interrupted 에서 flush)
+        # 한 턴의 input/output transcription 누적, turn_complete 에서 flush
         self._user_caption_buffer: list[str] = []
-        # 한 턴의 output transcription 누적 (history 저장용)
         self._char_caption_buffer: list[str] = []
-        # 송신 오디오 청크 카운터 (디버깅용 로그). 인스턴스별이라 세션마다 0부터.
-        self._audio_send_count = 0
 
     # ---- async context — 단일 Live 세션을 열고 끝까지 유지 ----
     async def __aenter__(self) -> "LiveBridge":
-        config = build_live_config(
-            self.char, self.session.user_id, self.session.character_key,
+        logger.info("connecting model=%s voice=%s", self.char.model, self.char.voice)
+        self._cm = self.client.aio.live.connect(
+            model=self.char.model, config=build_live_config(self.char)
         )
-        print(f"[live] connecting model={self.char.model} voice={self.char.voice}", flush=True)
-        self._cm = self.client.aio.live.connect(model=self.char.model, config=config)
         self._live = await self._cm.__aenter__()
-        print("[live] connected, starting receiver loop", flush=True)
         self._recv_task = asyncio.create_task(self._receiver_loop())
         return self
 
@@ -148,9 +135,6 @@ class LiveBridge:
     async def send_audio(self, pcm_bytes: bytes) -> None:
         if not self._live:
             return
-        self._audio_send_count += 1
-        if self._audio_send_count <= 3 or self._audio_send_count % 50 == 0:
-            print(f"[live] send_audio #{self._audio_send_count}, bytes={len(pcm_bytes)}", flush=True)
         await self._live.send_realtime_input(
             audio=types.Blob(
                 data=pcm_bytes,
@@ -170,58 +154,27 @@ class LiveBridge:
     # ---- 모델 → 클라 (수신 루프) ----
     async def _receiver_loop(self) -> None:
         """
-        공식 cookbook 패턴 (Get_started_LiveAPI.py):
-            while True:
-                turn = session.receive()
-                async for response in turn:
-                    ...
-
-        session.receive() 는 한 턴 단위 iterator 를 반환한다. 한 턴 끝나면
-        그 iterator 는 종료. 다음 턴을 받으려면 session.receive() 를 다시
-        호출해야 한다. 이전엔 `async for response in self._live.receive():`
-        한 번만 호출해서 첫 턴 끝나면 더 이상 응답 못 받던 게 멀티턴 무시
-        증상의 원인이었음.
+        공식 cookbook 패턴: session.receive() 는 한 턴 단위 iterator 반환.
+        한 턴 끝나면 iterator 종료 → 다음 턴 받으려면 receive() 다시 호출.
+        이전엔 receive() 를 한 번만 호출해서 첫 턴 이후 응답 못 받던 게
+        멀티턴 무시 버그의 원인이었음.
         """
         if not self._live:
-            print("[live] receiver loop: no _live, exiting", flush=True)
             return
-        print("[live] receiver loop: entering turn-by-turn mode", flush=True)
-        turn_num = 0
-        count = 0
         try:
             while True:
-                turn_num += 1
-                print(f"[live] receiver: awaiting turn #{turn_num}", flush=True)
                 turn = self._live.receive()
                 async for response in turn:
-                    count += 1
-                    sc = getattr(response, "server_content", None)
-                    has_data = getattr(response, "data", None) is not None
-                    has_in_tr = sc and getattr(sc, "input_transcription", None) is not None
-                    has_out_tr = sc and getattr(sc, "output_transcription", None) is not None
-                    turn_complete = sc and getattr(sc, "turn_complete", False)
-                    interrupted = sc and getattr(sc, "interrupted", False)
-                    interesting = has_in_tr or has_out_tr or turn_complete or interrupted
-                    if interesting or count <= 5 or count % 20 == 0:
-                        print(
-                            f"[live] recv#{count} (turn#{turn_num}) data={has_data} "
-                            f"in_tr={has_in_tr} out_tr={has_out_tr} "
-                            f"turn_complete={turn_complete} interrupted={interrupted}",
-                            flush=True,
-                        )
                     await self._handle_response(response)
-                print(f"[live] turn #{turn_num} iterator exhausted, looping for next", flush=True)
         except asyncio.CancelledError:
-            print(f"[live] receiver loop: cancelled after {count} responses", flush=True)
             raise
         except Exception as e:
-            print(f"[live] receiver loop: error after {count} responses: {e!r}", flush=True)
+            logger.exception("receiver loop failed")
             await self.on_event({"type": "error", "message": f"live recv: {e}"})
 
     async def _handle_response(self, response: Any) -> None:
         # 1) audio chunk
         if data := getattr(response, "data", None):
-            import base64
             await self.on_event({
                 "type": "audio",
                 "data": base64.b64encode(data).decode("ascii"),
@@ -231,13 +184,13 @@ class LiveBridge:
         if sc is None:
             return
 
-        # 2) 학습자 자막 (input transcription)
+        # 2) 학습자 자막
         in_tr = getattr(sc, "input_transcription", None)
         if in_tr and getattr(in_tr, "text", None):
             self._user_caption_buffer.append(in_tr.text)
             await self.on_event({"type": "caption_user", "text": in_tr.text})
 
-        # 3) 캐릭터 자막 (output transcription)
+        # 3) 캐릭터 자막
         out_tr = getattr(sc, "output_transcription", None)
         if out_tr and getattr(out_tr, "text", None):
             self._char_caption_buffer.append(out_tr.text)

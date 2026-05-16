@@ -29,13 +29,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="LingoDarling API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Darlingo API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    # Allow any origin: `flutter run -d chrome` serves on a random port, so a
-    # fixed allow-list does not work. Auth uses a Bearer header (not cookies),
-    # so credentials stay off, which keeps the "*" origin valid.
+    # Allow any origin: the Next.js client may be served from varying hosts
+    # and ports across dev/preview/prod, so a fixed allow-list does not work.
+    # Auth uses a Bearer header (not cookies), so credentials stay off, which
+    # keeps the "*" origin valid.
     allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],

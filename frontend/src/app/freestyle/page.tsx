@@ -980,7 +980,9 @@ function TextChat({ session, char }: { session: SessionInfo; char: CharacterMeta
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // 새 캐릭터 메시지가 완성될 때마다 hero pulse
+  // 새 캐릭터 메시지가 완성되는 시점에만 hero pulse 1번.
+  // 마지막 메시지의 streaming 종료 transition 을 감지하기 위한 effect.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     const last = messages[messages.length - 1];
     if (last && last.role === "char" && !last.streaming && last.text) {
@@ -1235,7 +1237,25 @@ function VoiceChat({ session, char }: { session: SessionInfo; char: CharacterMet
         });
         setPhase("listening");
       } catch (e) {
-        setError("마이크 권한이 필요해요: " + String(e));
+        // 마이크 권한/디바이스 에러 — 케이스별로 친절한 안내
+        const err = e as DOMException;
+        const name = err?.name ?? "";
+        const isMac =
+          typeof navigator !== "undefined" &&
+          /Mac/i.test(navigator.platform || navigator.userAgent);
+        let msg: string;
+        if (name === "NotAllowedError" || name === "SecurityError") {
+          msg = isMac
+            ? "마이크 접근이 거부됐어요. ① 브라우저 주소창 🔒 → 마이크 허용  ② macOS 시스템 설정 → 개인정보 보호 → 마이크 → 브라우저 체크"
+            : "마이크 접근이 거부됐어요. 브라우저 주소창 🔒 → 사이트 권한에서 마이크를 허용해주세요.";
+        } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+          msg = "사용 가능한 마이크가 없어요. 마이크가 연결되어 있는지 확인해주세요.";
+        } else if (name === "NotReadableError") {
+          msg = "마이크가 다른 앱에서 사용 중이에요. Zoom/Discord 등 다른 앱을 종료하고 다시 시도해주세요.";
+        } else {
+          msg = "마이크를 사용할 수 없어요: " + (err?.message ?? String(e));
+        }
+        setError(msg);
         teardown();
         setPhase("idle");
       }

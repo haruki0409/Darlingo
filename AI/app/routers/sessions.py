@@ -10,10 +10,8 @@ DELETE /api/memory/{user_id}/{char_key}    초기화 (디버그용)
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
-from google import genai
+from fastapi import APIRouter, HTTPException
 
-from app.deps import get_genai_client
 from app.schemas import CreateSessionRequest, MemorySnapshot, SessionInfo
 from app.services import history as history_svc
 from app.services import memory as memory_svc
@@ -50,16 +48,12 @@ def get_session(session_id: str) -> SessionInfo:
 
 
 @router.delete("/sessions/{session_id}")
-async def end_session(
-    session_id: str,
-    client: genai.Client = Depends(get_genai_client),
-) -> dict:
+async def end_session(session_id: str) -> dict:
     s = history_svc.pop(session_id)
     if s is None:
         raise HTTPException(404, f"unknown session: {session_id}")
-
-    # 메모리 consolidate 일시 비활성화 — 오염된 summary/facts 가 다음 세션을
-    # 오염시키고 1011 internal error 의 원인으로 의심됨. 대화 유지 우선 단계.
+    # 메모리 consolidate 는 의도적으로 비활성화 (memory_svc.consolidate 미호출).
+    # 이전 summary/facts 가 다음 세션 톤을 오염시키는 이슈가 있어 보류 중.
     return {
         "session_id": session_id,
         "ended": True,
