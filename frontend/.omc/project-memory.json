@@ -1,0 +1,193 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778968198332,
+  "projectRoot": "C:\\Users\\user\\hackathon\\LingoDarling\\frontend",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "16.2.6",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "19.2.4",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.2.4",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start",
+      "lint": "eslint"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "public",
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 5,
+      "lastAccessed": 1778968198124,
+      "keyFiles": [
+        "file.svg",
+        "globe.svg",
+        "next.svg",
+        "vercel.svg",
+        "window.svg"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1778968198127,
+      "keyFiles": []
+    },
+    "src\\app": {
+      "path": "src\\app",
+      "purpose": "Application code",
+      "fileCount": 4,
+      "lastAccessed": 1778968198166,
+      "keyFiles": [
+        "favicon.ico",
+        "globals.css",
+        "layout.tsx"
+      ]
+    },
+    "src\\components": {
+      "path": "src\\components",
+      "purpose": "UI components",
+      "fileCount": 5,
+      "lastAccessed": 1778968198168,
+      "keyFiles": [
+        "AuthField.tsx",
+        "AuthForm.tsx",
+        "BrandHeader.tsx"
+      ]
+    },
+    "src\\lib": {
+      "path": "src\\lib",
+      "purpose": "Library code",
+      "fileCount": 3,
+      "lastAccessed": 1778968198169,
+      "keyFiles": [
+        "aiApi.ts",
+        "supabase.ts",
+        "voiceAudio.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src\\app\\story\\3\\page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1778968468067,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\story\\1\\page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1778968470113,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\story\\2\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778968374820,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\story\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778968380302,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1778968381226,
+      "type": "file"
+    },
+    {
+      "path": "src\\lib\\aiApi.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778968381298,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778968385596,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1778968391672,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778968396979,
+      "type": "file"
+    },
+    {
+      "path": "src\\app\\home\\page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778968397246,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
