@@ -85,12 +85,12 @@ function ModeCard({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-base font-extrabold tracking-tight text-ink-700">
+        <p className="text-lg font-bold tracking-tight text-ink-700">
           {title}
         </p>
-        <p className="mt-0.5 truncate text-xs leading-relaxed text-ink-500">
+        <p className="mt-0.5 truncate text-[12px] font-normal leading-relaxed text-ink-500">
           {subKo}
-          <span className="mx-1.5 text-ink-300">・</span>
+          <span className="mx-1.5 text-ink-300">/</span>
           {subJa}
         </p>
       </div>
@@ -147,7 +147,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
+    <div className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-12">
       <FloatingChars />
 
       <main className="relative z-10 w-full max-w-md">
@@ -158,8 +158,11 @@ export default function HomePage() {
           <h1 className="mt-4 text-3xl font-black tracking-tight gradient-text">
             LingoDarling
           </h1>
-          <p className="mt-1.5 text-xs font-semibold tracking-widest text-lilac-500">
-            어떻게 배울까요? ・ どう学ぶ？
+          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.24em] text-lilac-500">
+            How to learn
+          </p>
+          <p className="text-base font-medium text-ink-500">
+            어떻게 배울까요? / どう学ぶ？
           </p>
         </div>
 
@@ -182,7 +185,7 @@ export default function HomePage() {
 
         <div className="mt-7 flex flex-col items-center gap-2">
           {email && (
-            <p className="text-[11px] text-ink-500/80">
+            <p className="text-[11px] font-normal text-ink-500/80">
               <span className="mr-1">💌</span>
               {email}
             </p>
@@ -190,9 +193,9 @@ export default function HomePage() {
           <button
             type="button"
             onClick={onSignOut}
-            className="text-xs font-semibold text-ink-500 underline-offset-4 transition hover:text-lilac-500 hover:underline"
+            className="text-xs font-medium text-ink-500 underline-offset-4 transition hover:text-lilac-500 hover:underline"
           >
-            로그아웃 ・ ログアウト
+            로그아웃 / ログアウト
           </button>
         </div>
 

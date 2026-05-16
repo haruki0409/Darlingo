@@ -1,14 +1,36 @@
-# Serena
-.serena/
+# ============================================================
+#  LingoDarling — root .gitignore
+# ============================================================
 
-# Python
+# ── Secrets (전체 트리에서 차단) ──
+# .env, .env.local, .env.production 등 모든 변형 차단.
+# 단 .env.example / .env.local.example 같은 템플릿은 허용.
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# 명시적 backstop
+AI/.env
+backend/.env
+frontend/.env.local
+
+# ── Python ──
 __pycache__/
 *.py[cod]
+*.pyo
 .venv/
 venv/
-backend/.env
+.pytest_cache/
 
-# Flutter
+# ── Node / Next.js ──
+node_modules/
+.next/
+out/
+build/
+.vercel
+
+# ── Flutter ──
 flutter_app/.dart_tool/
 flutter_app/build/
 flutter_app/.flutter-plugins
@@ -17,13 +39,17 @@ flutter_app/.packages
 flutter_app/pubspec.lock
 flutter_app/run_web.sh
 flutter_app/run_web_shared.sh
+flutter_app/run_android.sh
 
-# Reference material (local only)
-references/
+# ── Per-user runtime data (AI 메모리 등) ──
+AI/memory/*/
 
-# Misc
+# ── Tools / Editor / OS ──
+.serena/
 .DS_Store
 *.log
+.idea/
+.vscode/
 
-# Android run script (contains keys, local only)
-flutter_app/run_android.sh
+# ── Local-only material ──
+references/
