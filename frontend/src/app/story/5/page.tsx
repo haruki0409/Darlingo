@@ -7,15 +7,13 @@ import { useEffect, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 
 type Bg =
-  | "ueno-day"
-  | "ueno-night"
-  | "s1-normal"
-  | "s1-happy"
-  | "s1-bad"
-  | "s2-sad"
-  | "s3-leaving"
-  | "s4-cg"
-  | "s4-smile";
+  | "street-day"
+  | "street-night"
+  | "normal"
+  | "happy"
+  | "bad"
+  | "cg"
+  | "smile";
 
 type Option = { ko: string; correct?: boolean };
 type WrongFB = { madBg: Bg; ja: string; ko: string; tone?: "sad" | "angry" };
@@ -42,455 +40,218 @@ type Beat = (
   | { kind: "end" }
 ) & { bg?: Bg };
 
+// Stage 5 전용 아트가 아직 없어, 기존 에셋으로 임시 매핑(플레이스홀더).
+// 전용 컷이 생기면 아래 경로 7줄만 교체하면 됨 (Stage 3 의 fallback 방식과 동일).
 const BG_SRC: Record<Bg, string> = {
-  "ueno-day": "/images/stage4-ueno-day.png",
-  "ueno-night": "/images/stage4-ueno-night.png",
-  "s1-normal": "/images/stage4-s1-normal.png",
-  "s1-happy": "/images/stage4-s1-happy.png",
-  "s1-bad": "/images/stage4-s1-bad.png",
-  "s2-sad": "/images/stage4-s2-lunch-sad.png",
-  "s3-leaving": "/images/stage4-s3-leaving.png",
-  "s4-cg": "/images/stage4-s4-meet-again.png",
-  "s4-smile": "/images/stage4-s4-last-smile.png",
+  "street-day": "/images/stage1-street-happy.png", // 그 골목, 벚꽃 (재회)
+  "street-night": "/images/stage4-ueno-night.png", // 밤 벚꽃 (흔들림·엔딩)
+  normal: "/images/stage4-s1-normal.png",
+  happy: "/images/stage4-s1-happy.png",
+  bad: "/images/stage4-s1-bad.png",
+  cg: "/images/stage4-s4-meet-again.png", // 프러포즈 클로즈업
+  smile: "/images/stage4-s4-last-smile.png", // 수락·엔딩 미소
 };
 
 const PROGRESS_KEY = "lingodarling:story-cleared";
-const STAGE_ID = 4;
+const STAGE_ID = 5;
 const HEARTS_MAX = 5;
 
 const SCRIPT: Beat[] = [
-  // ── 씬 1 : 분홍빛 터널의 설렘 (낮 벚꽃·첫 데이트) ──
+  // ── 씬 1 : 그 골목에서 다시 (재회·수미상관) ──
   {
     kind: "narr",
-    bg: "ueno-day",
-    ja: "春(はる)の夕(ゆう)まえ。上野公園(うえのこうえん)、桜(さくら)のトンネル。",
-    ko: "봄의 해 지기 전. 우에노 공원, 벚꽃 터널.",
+    bg: "street-day",
+    ja: "一年(いちねん)後(ご)。あの路地(ろじ)に、また、桜(さくら)が舞(ま)う。",
+    ko: "1년 후. 그 골목에, 다시, 벚꽃이 흩날린다.",
   },
   {
     kind: "narr",
-    bg: "s1-normal",
-    ja: "ハルキが、ふり返(かえ)る。今日(きょう)のために選(えら)んだ服(ふく)。手(て)には、お弁当(べんとう)のかばん。",
-    ko: "하루키가, 돌아본다. 오늘을 위해 고른 옷차림. 손엔, 도시락 가방.",
+    bg: "normal",
+    ja: "隣(となり)を歩(ある)くハルキ。もう、敬語(けいご)も、ぎこちなさも、ない。",
+    ko: "옆을 걷는 하루키. 이제, 존댓말도, 어색함도, 없다.",
   },
   {
     kind: "line",
-    bg: "s1-normal",
-    ja: "ねえ、見(み)て。この桜(さくら)……どう、思(おも)う？",
-    ko: "있잖아, 봐. 이 벚꽃…… 어떻게, 생각해?",
+    bg: "happy",
+    ja: "ここだよ、ここ。きみが、わたしに——どんっ、てぶつかった所(ところ)。へへ。",
+    ko: "여기야, 여기. 네가, 나한테——콱, 부딪힌 곳. 헤헤.",
   },
   {
     kind: "tip",
-    ja: "きれい ／ 桜(さくら)",
-    reading: "키레이 ／ 사쿠라",
-    meaning: "예쁘다·깨끗하다 ／ 벚꽃",
-    note: "「きれい」는 な형용사예요. 「きれいだ・きれいな花(はな)」처럼 써요. 「きれいだね」=예쁘다 그치.",
-    example: "桜(さくら)、きれいだね。— 벚꽃, 예쁘다 그치.",
+    ja: "あの時(とき) ／ 覚(おぼ)えてる",
+    reading: "아노 토키 ／ 오보에테루",
+    meaning: "그때 ／ 기억해",
+    note: "「あの時」=그때(추억의 한 시점). 「覚えてる」=기억하고 있어 (「覚えている」의 회화체).",
+    example: "あの時(とき)のこと、覚(おぼ)えてる。— 그때 일, 기억해.",
   },
   {
     kind: "quiz",
-    question: "벚꽃을 보며 네 반응을 기다리는 하루키. 뭐라고 답할까?",
-    hint: "같이 감탄해 주는 말 (선택형)",
+    question: "처음 부딪힌 그 자리. 하루키 말에 뭐라고 답할까?",
+    hint: "함께한 추억을 떠올리며 (선택형)",
     options: [
-      { ko: "うん、すごく、きれいだね。", correct: true },
-      { ko: "べつに、ふつう、かな。" },
-      { ko: "はやく、帰(かえ)ろう。" },
+      { ko: "うん、ちゃんと、覚(おぼ)えてるよ。", correct: true },
+      { ko: "さあ、忘(わす)れた、かな。" },
+      { ko: "そんな所(ところ)、あった？" },
     ],
     onWrong: {
-      madBg: "s1-bad",
-      tone: "angry",
-      ja: "……え。そんな言(い)い方(かた)、ある？",
-      ko: "……뭐. 그런 말이, 어딨어?",
-    },
-  },
-  {
-    kind: "line",
-    bg: "s1-happy",
-    ja: "わぁ、よかった……！ やっぱり、ここに来(き)て、よかったね！",
-    ko: "와아, 다행이다……! 역시, 여기 오길, 잘했어!",
-  },
-  {
-    kind: "tip",
-    ja: "文末(ぶんまつ)の「ね」",
-    reading: "~네 ／ ~지",
-    meaning: "공감·맞장구",
-    note: "문장 끝 「ね」는 상대의 동의를 구하거나 공감할 때 붙여요. 「きれいだね」「よかったね」처럼.",
-    example: "楽(たの)しいね。— 즐겁다, 그치.",
-  },
-  {
-    kind: "line",
-    bg: "s1-normal",
-    ja: "あのね……今日(きょう)は、ちょっと、頑張(がんば)ったんだ。……気(き)づいた？",
-    ko: "있잖아…… 오늘은, 좀, 신경 썼어. ……눈치챘어?",
-  },
-  {
-    kind: "tip",
-    ja: "頑張(がんば)る ／ 似合(にあ)う",
-    reading: "간바루 ／ 니아우",
-    meaning: "공들이다·노력하다 ／ 어울리다",
-    note: "「頑張った」=공들였어·노력했어. 「似合(にあ)ってる」=잘 어울려 — 칭찬할 때 자주 써요.",
-    example: "その服(ふく)、似合(にあ)ってるね。— 그 옷, 잘 어울려.",
-  },
-  {
-    kind: "quiz",
-    question: "옷차림에 공들인 하루키가 눈치챘냐 묻는다. 뭐라고 답할까?",
-    hint: "알아봐 주고 칭찬하는 말 (선택형)",
-    options: [
-      { ko: "うん、すごく、似合(にあ)ってる。", correct: true },
-      { ko: "べつに、いつもと、同(おな)じ。" },
-      { ko: "気(き)づかなかった。" },
-    ],
-    onWrong: {
-      madBg: "s1-bad",
+      madBg: "bad",
       tone: "sad",
-      ja: "……もう。ちゃんと、見(み)てよ。",
-      ko: "……정말. 제대로, 봐줘.",
+      ja: "もう……ひどい。わたしは、覚(おぼ)えてるのに。",
+      ko: "정말…… 너무해. 난, 기억하는데.",
     },
   },
   {
     kind: "line",
-    bg: "s1-happy",
-    ja: "えへへ……気(き)づいて、くれたんだ。",
-    ko: "에헤헤…… 눈치채, 줬구나.",
-  },
-  {
-    kind: "narr",
-    bg: "s1-normal",
-    ja: "木陰(こかげ)を見(み)つけて、ふたりは敷物(しきもの)を広(ひろ)げた。",
-    ko: "그늘을 찾아, 둘은 돗자리를 폈다.",
+    bg: "happy",
+    ja: "……えへへ。ばか。",
+    ko: "……에헤헤. 바보.",
   },
 
-  // ── 씬 2 : 엇갈리는 타이밍 (도시락 vs 폰·서운함) ──
-  {
-    kind: "line",
-    bg: "s1-normal",
-    ja: "これ……朝(あさ)から、作(つく)ったんだ。……食(た)べて、くれる？",
-    ko: "이거…… 아침부터, 만들었어. ……먹어, 줄래?",
-  },
-  {
-    kind: "tip",
-    ja: "作(つく)る ／ いただきます",
-    reading: "츠쿠루 ／ 이타다키마스",
-    meaning: "만들다 ／ 잘 먹겠습니다",
-    note: "「朝(あさ)から作った」=아침부터 만들었어. 「いただきます」=먹기 전 인사(잘 먹겠습니다).",
-    example: "うれしい、いただきます。— 기뻐, 잘 먹을게.",
-  },
-  {
-    kind: "quiz",
-    question: "정성껏 만든 도시락을 내민다. 뭐라고 답할까?",
-    hint: "고마운 마음을 담아 (선택형)",
-    options: [
-      { ko: "うん、うれしい。いただきます。", correct: true },
-      { ko: "おなか、すいてないんだ。" },
-      { ko: "あとで、いいや。" },
-    ],
-    onWrong: {
-      madBg: "s1-bad",
-      tone: "sad",
-      ja: "……そっか。むり、しないで、いいよ。",
-      ko: "……그렇구나. 무리, 안 해도, 돼.",
-    },
-  },
-  {
-    kind: "line",
-    bg: "s1-happy",
-    ja: "ほんと！？ えへへ……たくさん、作(つく)ったんだ。",
-    ko: "정말!? 에헤헤…… 많이, 만들었어.",
-  },
+  // ── 씬 2 : 한 번의 흔들림 (불안·FailCard 구간) ──
   {
     kind: "narr",
-    bg: "s1-normal",
-    ja: "その時(とき)——スマホが、けたたましく鳴(な)った。",
-    ko: "그때—— 스마트폰이, 요란하게 울렸다.",
-  },
-  {
-    kind: "thought",
-    ja: "（急(きゅう)ぎの連絡(れんらく)……。これだけ、すぐ済(す)ませれば——。）",
-    ko: "(급한 연락……. 이것만, 빨리 끝내면——.)",
-  },
-  {
-    kind: "quiz",
-    question: '하루키에게 "잠깐만 기다려, 금방 끝나" 라고 하려면?',
-    hint: "잠깐 양해를 구하는 말",
-    options: [
-      { ko: "ちょっと待(ま)って、すぐ終(お)わるから。", correct: true },
-      { ko: "もう帰(かえ)って、すぐ終(お)わるから。" },
-      { ko: "ずっと待(ま)って、まだ終(お)わらない。" },
-    ],
-    onWrong: {
-      madBg: "s2-sad",
-      tone: "sad",
-      ja: "……うん。気(き)にしないで。",
-      ko: "……응. 신경 쓰지 마.",
-    },
-  },
-  {
-    kind: "tip",
-    ja: "ちょっと待(ま)って ／ すぐ",
-    reading: "춋토 맛테 ／ 스구",
-    meaning: "잠깐 기다려 ／ 곧·금방",
-    note: "「ちょっと待って」=잠깐만. 「すぐ終わる」=금방 끝나. 친한 사이에서 쓰는 회화체예요.",
-    example: "ちょっと待(ま)ってね、すぐだから。— 잠깐만, 금방이니까.",
+    bg: "street-night",
+    ja: "笑(わら)っていたハルキが、ふと、足(あし)を止(と)めた。",
+    ko: "웃던 하루키가, 문득, 걸음을 멈췄다.",
   },
   {
     kind: "line",
-    bg: "s2-sad",
-    ja: "……うん。ゆっくりで、いいよ。",
-    ko: "……응. 천천히 해도, 돼.",
-  },
-  {
-    kind: "thought",
-    ja: "（……「いいよ」？　なのに、どうして、その顔(かお)——。）",
-    ko: "(……「됐어」? 근데, 왜, 그런 표정——.)",
+    bg: "normal",
+    ja: "ねえ……。わたしたち、これからも、ずっと、一緒(いっしょ)に、いられるのかな。……たまに、こわくなる。",
+    ko: "있잖아……. 우리, 앞으로도, 쭉, 같이, 있을 수 있을까. ……가끔, 무서워져.",
   },
   {
     kind: "tip",
-    ja: "「いいよ」の二(ふた)つの顔(かお)",
-    reading: "이이요",
-    meaning: "좋아·괜찮아 ↔ 됐어",
-    note: "밝고 길게 「いいよ♪」=좋아·괜찮아(허락). 낮고 짧게 「……いいよ」=됐어(서운·거절). 톤과 표정으로 정반대 뜻이 돼요. 일본어 高맥락 핵심!",
-    example: "「いいよ」— 좋아 ／ 「……いいよ」— 됐어.",
+    ja: "ずっと ／ これからも ／ こわい",
+    reading: "즛토 ／ 코레카라모 ／ 코와이",
+    meaning: "쭉·계속 ／ 앞으로도 ／ 무섭다",
+    note: "「ずっと」=쭉·계속·영원히. 「これからも」=앞으로도. 「こわい」=무섭다(불안할 때도 써요).",
+    example: "これからも、ずっと、一緒(いっしょ)。— 앞으로도, 쭉, 함께.",
   },
   {
     kind: "quiz",
-    question: "고개 숙인 하루키의 「……いいよ」는 어느 쪽?",
-    hint: "표정이 굳어 있다",
+    question: "불안해하는 하루키에게 뭐라고 답할까?",
+    hint: "흔들리지 않는 마음을 담아",
     options: [
-      { ko: "정말 괜찮다는 뜻" },
-      { ko: "사실은 서운하다는 뜻", correct: true },
-      { ko: "빨리 하라는 뜻" },
+      { ko: "もちろん。ずっと、そばにいるよ。", correct: true },
+      { ko: "うーん、わからない、けど。" },
+      { ko: "それは、その時(とき)、かんがえよう。" },
     ],
     onWrong: {
-      madBg: "s2-sad",
+      madBg: "bad",
       tone: "sad",
-      ja: "……べつに。なんでも、ない。",
-      ko: "……딱히. 아무것도, 아니야.",
+      ja: "……やっぱり。きみも、わからない、んだ。",
+      ko: "……역시. 너도, 모르는, 거구나.",
     },
   },
   {
-    kind: "narr",
-    bg: "ueno-night",
-    ja: "仕事(しごと)が片付(かたづ)いた頃(ころ)には、桜(さくら)に灯(あか)りが点(つ)いていた。",
-    ko: "일이 정리됐을 땐, 벚꽃에 조명이 들어와 있었다.",
+    kind: "tip",
+    ja: "もちろん ／ そばにいる",
+    reading: "모치론 ／ 소바니 이루",
+    meaning: "물론 ／ 곁에 있다",
+    note: "「もちろん」=물론(당연하지). 「そばにいる」=곁에 있다. 「そばにいるよ」=곁에 있을게 (안심·약속).",
+    example: "ずっと、そばにいるよ。— 쭉, 곁에 있을게.",
   },
 
-  // ── 씬 3 : 밤 벚꽃 아래의 차가운 침묵 (위기) ──
+  // ── 씬 3 : 영원의 약속 = 프러포즈 (절정) ──
   {
     kind: "narr",
-    bg: "ueno-night",
-    ja: "ふたりの間(あいだ)の空気(くうき)は、夜桜(よざくら)より、冷(つめ)たかった。",
-    ko: "둘 사이의 공기는, 밤 벚꽃보다, 차가웠다.",
-  },
-  {
-    kind: "line",
-    bg: "s3-leaving",
-    ja: "ううん。わたしも、邪魔(じゃま)しちゃって、ごめん。",
-    ko: "아니야. 나도, 방해해서, 미안해.",
-  },
-  {
-    kind: "tip",
-    ja: "ううん ／ 邪魔(じゃま)",
-    reading: "우운 ／ 자마",
-    meaning: "아니(부정) ／ 방해",
-    note: "「ううん」=아니 (가벼운 부정). 「うん」(응)과 헷갈리지 마세요. 「邪魔しちゃって」=방해해 버려서.",
-    example: "ううん、邪魔(じゃま)じゃないよ。— 아니, 방해 아니야.",
-  },
-  {
-    kind: "quiz",
-    question: "「邪魔(じゃま)しちゃって、ごめん」 속 하루키의 진심은?",
-    hint: "정말 사과하는 게 맞을까?",
-    options: [
-      { ko: "진심으로 자기 잘못이라 생각함" },
-      { ko: "서운함을 돌려 말하는 것", correct: true },
-      { ko: "전혀 화나지 않음" },
-    ],
-    onWrong: {
-      madBg: "s3-leaving",
-      tone: "angry",
-      ja: "……もう、いいってば。",
-      ko: "……됐다니까.",
-    },
-  },
-  {
-    kind: "line",
-    bg: "s3-leaving",
-    ja: "もう、いい。忙(いそが)しいのに、迷惑(めいわく)でしょ。",
-    ko: "됐어. 바쁜데, 민폐잖아.",
-  },
-  {
-    kind: "tip",
-    ja: "もういい ／ 迷惑(めいわく)",
-    reading: "모- 이이 ／ 메이와쿠",
-    meaning: "됐어·그만 ／ 민폐·폐",
-    note: "「もういい」=(부정) 됐어·그만 (체념·삐짐). 「いいよ」와 또 달라요. 「迷惑でしょ」=폐잖아 (밀어내는 말).",
-    example: "もういい。ひとりで帰(かえ)る。— 됐어. 혼자 갈래.",
-  },
-  {
-    kind: "quiz",
-    question: "「もう、いい」 라고 할 때, 해야 할 행동은?",
-    hint: "밀어내지만, 진심은?",
-    options: [
-      { ko: "알겠다 하고 폰을 더 본다" },
-      { ko: "진심으로 사과하고 붙잡는다", correct: true },
-      { ko: "같이 화를 낸다" },
-    ],
-    onWrong: {
-      madBg: "s3-leaving",
-      tone: "sad",
-      ja: "……ほら。やっぱり、どうでも、いいんだ。",
-      ko: "……거봐. 역시, 아무래도, 상관없는 거잖아.",
-    },
-  },
-  {
-    kind: "line",
-    bg: "s3-leaving",
-    ja: "……もう、帰(かえ)る。べつべつで、いいから。",
-    ko: "……그만, 갈래. 따로따로, 가도 되니까.",
+    bg: "cg",
+    ja: "——わたしは、ポケットに、手(て)を入(い)れた。小(ちい)さな、箱(はこ)。",
+    ko: "——나는, 주머니에, 손을 넣었다. 작은, 상자.",
   },
   {
     kind: "thought",
-    ja: "（このまま行(い)かせたら——今日(きょう)が、本当(ほんとう)に終(お)わる。）",
-    ko: "(이대로 보내면—— 오늘이, 진짜로 끝난다.)",
+    ja: "（いまだ。いま、言(い)わなきゃ。一生(いっしょう)に、一度(いちど)の——。）",
+    ko: "(지금이야. 지금, 말해야 해. 평생, 한 번의——.)",
   },
   {
     kind: "quiz",
-    question: "떠나려는 하루키를 붙잡으려면?",
-    hint: "지금, 놓치면 안 된다",
+    question: "무릎을 꿇고, 반지를 내민다. 영원을 약속하려면?",
+    hint: "가장 진심을 담은, 한 마디",
     options: [
-      { ko: "待(ま)って。行(い)かないで。", correct: true },
-      { ko: "待(ま)って。さよなら。" },
-      { ko: "いいよ。帰(かえ)って。" },
+      { ko: "結婚(けっこん)してください。ずっと、そばにいて。", correct: true },
+      { ko: "友(とも)だちで、いてください。" },
+      { ko: "さよなら、元気(げんき)でね。" },
     ],
     onWrong: {
-      madBg: "s3-leaving",
+      madBg: "cg",
       tone: "sad",
-      ja: "……っ、はなして。",
-      ko: "……윽, 놔.",
+      ja: "……え。いま、なんて……？",
+      ko: "……어. 지금, 뭐라고……?",
     },
   },
   {
     kind: "tip",
-    ja: "待(ま)って ／ 〜ないで",
-    reading: "맛테 ／ ~나이데",
-    meaning: "기다려 ／ ~하지 마",
-    note: "「行(い)かないで」=가지 마. 동사 ない형+で=~하지 마 (부탁·만류). 「待って」=기다려.",
-    example: "行(い)かないで。そばに、いて。— 가지 마. 곁에, 있어줘.",
+    ja: "結婚(けっこん)してください ／ 一生(いっしょう)",
+    reading: "켓콘시테 쿠다사이 ／ 잇쇼-",
+    meaning: "결혼해 주세요 ／ 평생",
+    note: "「結婚してください」=결혼해 주세요 (정식 청혼). 반말은 「結婚しよう」=결혼하자. 「一生」=평생·일생.",
+    example: "わたしと、結婚(けっこん)してください。— 저와, 결혼해 주세요.",
+  },
+  {
+    kind: "line",
+    bg: "cg",
+    ja: "え……っ。う、うそ……。ほんとに……？ 泣(な)いちゃう、じゃん……。",
+    ko: "어……. 거, 거짓말……. 진짜……? 울잖아…….",
   },
 
-  // ── 씬 4 : 진심의 고백, 깊어지는 밤 (화해·돈독) ──
+  // ── 씬 4 : 결혼 약속, 진엔딩 ──
   {
     kind: "narr",
-    bg: "s4-cg",
-    ja: "とっさに、手(て)をつかんだ。——ハルキの目(め)が、大(おお)きく、見開(みひら)く。",
-    ko: "반사적으로, 손을 잡았다. ——하루키의 눈이, 크게, 떠진다.",
-  },
-  {
-    kind: "thought",
-    ja: "（今(いま)、言(い)わなきゃ。本当(ほんとう)の、気持(きも)ちを。）",
-    ko: "(지금, 말해야 해. 진짜, 마음을.)",
-  },
-  {
-    kind: "quiz",
-    question: '하루키에게 진심을 전하려면? — "사실은, 너한테만 집중하고 싶어서 서둘렀어"',
-    hint: "솔직한 본심을 담아",
-    options: [
-      { ko: "本当(ほんとう)は、君(きみ)だけ、見(み)ていたかったんだ。", correct: true },
-      { ko: "本当(ほんとう)は、君(きみ)に、興味(きょうみ)、なかったんだ。" },
-      { ko: "本当(ほんとう)は、もう、帰(かえ)りたいんだ。" },
-    ],
-    onWrong: {
-      madBg: "s3-leaving",
-      tone: "sad",
-      ja: "……やっぱり、そう、なんだ。",
-      ko: "……역시, 그런, 거구나.",
-    },
-  },
-  {
-    kind: "tip",
-    ja: "本当(ほんとう)は ／ 〜たかった",
-    reading: "혼토-와 ／ ~타캇타",
-    meaning: "사실은 ／ ~하고 싶었어",
-    note: "「本当は」=사실은·실은 (속마음 꺼낼 때). 동사ます형 어간+たかった=~하고 싶었어 (과거의 소망). 見(み)る→見ていたかった.",
-    example: "本当(ほんとう)は、ずっと、一緒(いっしょ)に、いたかった。— 사실은, 계속, 같이, 있고 싶었어.",
+    bg: "smile",
+    ja: "ハルキは、くしゃくしゃの笑顔(えがお)で、小指(こゆび)を、差(さ)し出(だ)した。",
+    ko: "하루키는, 엉망진창인 웃는 얼굴로, 새끼손가락을, 내밀었다.",
   },
   {
     kind: "line",
-    bg: "s4-cg",
-    ja: "……本当(ほんとう)は、はじめての、デートで……すごく、緊張(きんちょう)してたの。よく、見(み)られたくて。",
-    ko: "……사실은, 첫, 데이트라서…… 엄청, 긴장했어. 잘, 보이고 싶어서.",
+    bg: "smile",
+    ja: "……うん。うん……！ ずっと、いっしょ。やくそく。指切(ゆびき)り、げんまん。",
+    ko: "……응. 응……! 쭉, 함께. 약속. 손가락 걸고, 꾹.",
   },
   {
     kind: "tip",
-    ja: "緊張(きんちょう) ／ はじめて",
-    reading: "킨쵸- ／ 하지메테",
-    meaning: "긴장 ／ 처음",
-    note: "「緊張する」=긴장하다. 「緊張してた」=긴장했었어. 「はじめてのデート」=첫 데이트 (はじめて+の+명사).",
-    example: "はじめてで、緊張(きんちょう)してる。— 처음이라, 긴장돼.",
+    ja: "指切(ゆびき)りげんまん ／ 永遠(えいえん)",
+    reading: "유비키리 겐만 ／ 에이엔",
+    meaning: "손가락 약속 ／ 영원",
+    note: "「指切りげんまん」=새끼손가락 거는 약속 (한국의 “꼭꼭 약속”). 「永遠」=영원. 약속을 절대 어기지 않겠다는 다짐이에요.",
+    example: "永遠(えいえん)に、いっしょ。指切(ゆびき)り。— 영원히, 함께. 손가락 걸고.",
   },
   {
     kind: "quiz",
-    question: "「緊張(きんちょう)してた」 의 의미는?",
-    hint: "첫 데이트라서……",
+    question: "마지막으로, 하루키에게 영원을 약속하며?",
+    hint: "이 이야기의, 마지막 한 마디",
     options: [
-      { ko: "긴장했었어", correct: true },
-      { ko: "화났었어" },
-      { ko: "안 왔었어" },
+      { ko: "うん。永遠(えいえん)に、きみと、いっしょだ。", correct: true },
+      { ko: "うん、たぶん、ね。" },
+      { ko: "うん、いつか、ね。" },
     ],
     onWrong: {
-      madBg: "s3-leaving",
+      madBg: "bad",
       tone: "sad",
-      ja: "もう……笑(わら)わないで、よ。",
-      ko: "정말…… 웃지 마, 응.",
+      ja: "もう……ここで、ふざけないで、よ。",
+      ko: "정말…… 여기서, 장난치지 마, 응.",
     },
   },
   {
     kind: "line",
-    bg: "s4-smile",
-    ja: "ばか……。言(い)わなきゃ、わかんないよ。今日(きょう)は、わたしだけ、見(み)ててほしかったの。……もう、よそ見(み)、なし、ね？",
-    ko: "바보……. 말 안 하면, 모르잖아. 오늘은, 나만, 봐주길 바랐어. ……이제, 한눈팔기, 없기, 다?",
-  },
-  {
-    kind: "tip",
-    ja: "言(い)わなきゃ ／ よそ見(み) ／ 〜てほしかった",
-    reading: "이와나캬 ／ 요소미 ／ ~테 호시캇타",
-    meaning: "말 안 하면 ／ 한눈팔기 ／ ~해주길 바랐어",
-    note: "「言わなきゃわからない」=말 안 하면 몰라 (なきゃ=なければ 회화체). 「よそ見」=한눈팔기·딴 데 봄. 「見ててほしかった」=봐주길 바랐어.",
-    example: "こっち、見(み)てて、ほしかったの。— 이쪽, 봐주길, 바랐어.",
-  },
-  {
-    kind: "quiz",
-    question: '하루키에게 "응. 이제 너만 볼게" 라고 답하려면?',
-    hint: "약속을 담아",
-    options: [
-      { ko: "うん。これからは、君(きみ)だけ、見(み)てる。", correct: true },
-      { ko: "うん。これからも、よそ見(み)、する。" },
-      { ko: "うん。もう、さよなら。" },
-    ],
-    onWrong: {
-      madBg: "s3-leaving",
-      tone: "sad",
-      ja: "……むぅ。ほんとに？",
-      ko: "……흥. 진짜?",
-    },
-  },
-  {
-    kind: "line",
-    bg: "s4-smile",
-    ja: "……うん。やくそく、だよ。指切(ゆびき)り。",
-    ko: "……응. 약속, 이야. 손가락 걸고.",
+    bg: "smile",
+    ja: "……えへへ。じゃあ、これで——わたしたち、家族(かぞく)、だね。",
+    ko: "……에헤헤. 그럼, 이걸로——우리, 가족, 이네.",
   },
   {
     kind: "narr",
-    bg: "ueno-night",
-    ja: "舞(ま)い散(ち)る夜桜(よざくら)の下(した)、ふたつの手(て)が、また、重(かさ)なった。さっきより、ずっと、強(つよ)く。",
-    ko: "흩날리는 밤 벚꽃 아래, 두 손이, 다시, 맞닿았다. 아까보다, 훨씬, 단단하게.",
+    bg: "street-night",
+    ja: "桜(さくら)が、雪(ゆき)のように、ふたりに降(ふ)りつもる。",
+    ko: "벚꽃이, 눈처럼, 두 사람 위로 쌓인다.",
   },
   {
     kind: "narr",
-    bg: "ueno-night",
-    ja: "——次(つぎ)は、ふたりで、永遠(えいえん)の約束(やくそく)を。",
-    ko: "——다음은, 둘이서, 영원의 약속을.",
+    bg: "street-night",
+    ja: "——物語(ものがたり)は、この路地(ろじ)で始(はじ)まり。この路地(ろじ)で、永遠(えいえん)になった。",
+    ko: "——이야기는, 이 골목에서 시작됐고. 이 골목에서, 영원이 됐다.",
   },
-  { kind: "end", bg: "ueno-night" },
+  { kind: "end", bg: "street-night" },
 ];
 
 const TOTAL_QUIZZES = SCRIPT.filter((b) => b.kind === "quiz").length;
@@ -501,7 +262,7 @@ function resolveBg(idx: number): Bg {
     const b = SCRIPT[j];
     if (b.bg) return b.bg;
   }
-  return "ueno-day";
+  return "street-day";
 }
 
 // 1-indexed position of the current quiz, for the "Q. n/N" badge.
@@ -588,11 +349,11 @@ function StageHeader({
           </Link>
           <div className="min-w-0 flex-1">
             <p className="text-[9px] font-extrabold tracking-[0.25em] text-sakura-200">
-              STAGE 4 ・ 第四話
+              STAGE 5 ・ 最終話
             </p>
             <p className="truncate text-[13px] font-black leading-tight tracking-tight text-white drop-shadow">
-              벚꽃길 산책{" "}
-              <span className="text-white/70">・ 桜並木の散歩</span>
+              영원을 약속해{" "}
+              <span className="text-white/70">・ 永遠の約束を</span>
             </p>
           </div>
           <Hearts score={heartsLeft} max={HEARTS_MAX} />
@@ -835,17 +596,17 @@ function FailCard({ onRetry }: { onRetry: () => void }) {
         <Hearts score={0} max={HEARTS_MAX} />
       </div>
       <h2 className="mt-4 text-center text-xl font-black tracking-tight text-white drop-shadow">
-        마음이, 닿지 않았다
+        약속은, 전하지 못했다
       </h2>
       <p className="mt-0.5 text-center text-[12px] font-semibold tracking-[0.2em] text-rose-200/80">
-        想(おも)いは、届(とど)かなかった
+        約束(やくそく)は、届(とど)かなかった
       </p>
       <div className="mt-4 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center backdrop-blur">
         <p className="text-[13px] font-bold italic leading-relaxed text-white">
-          「……はじめての、デートだったのに、ね。」
+          「……またいつか、ね。」
         </p>
         <p className="mt-1 text-[11px] italic leading-relaxed text-white/75">
-          ……첫, 데이트였는데, 말이야.
+          ……또 언젠가, 봐.
         </p>
       </div>
       <div className="mt-5 flex flex-col gap-2">
@@ -873,16 +634,16 @@ function EndCard({ wrongCount }: { wrongCount: number }) {
     <div className="animate-fade-in-up mx-3 mb-5 rounded-3xl border border-white/25 bg-gradient-to-br from-black/75 to-black/55 px-6 pb-6 pt-5 shadow-[0_-10px_40px_-10px_rgba(0,0,0,0.7)] backdrop-blur-md">
       <div className="flex items-center justify-center gap-2">
         <span className="text-sakura-300">✦</span>
-        <p className="text-[10px] font-extrabold tracking-[0.3em] text-white/80">
-          CHAPTER 4 CLEAR
+        <p className="text-[10px] font-extrabold tracking-[0.32em] text-white/80">
+          THE END ・ 完
         </p>
         <span className="text-sakura-300">✦</span>
       </div>
       <h2 className="mt-3 text-center text-2xl font-black tracking-tight text-white drop-shadow">
-        벚꽃길 산책
+        영원을 약속해
       </h2>
       <p className="mt-0.5 text-center text-[12px] font-semibold tracking-[0.25em] text-lilac-200">
-        桜並木の散歩
+        永遠の約束を
       </p>
 
       <div className="mt-4 flex justify-center">
@@ -894,25 +655,23 @@ function EndCard({ wrongCount }: { wrongCount: number }) {
 
       <div className="mt-5 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-center backdrop-blur">
         <p className="text-[13px] font-bold italic leading-relaxed text-white">
-          「……もう、よそ見(み)、なし、ね？」
+          「ずっと、いっしょ。やくそく。指切(ゆびき)り、げんまん。」
         </p>
         <p className="mt-1 text-[11px] italic leading-relaxed text-white/75">
-          ……이제, 한눈팔기, 없기, 다?
+          쭉, 함께. 약속. 손가락 걸고, 꾹.
         </p>
       </div>
 
-      <div className="mt-5 flex items-center justify-between rounded-2xl border border-lilac-300/30 bg-lilac-400/15 px-3 py-2.5">
-        <div>
-          <p className="text-[9px] font-extrabold tracking-[0.25em] text-lilac-200">
-            NEXT ・ 다음 화
-          </p>
-          <p className="mt-0.5 text-[13px] font-extrabold text-white">
-            영원을 약속해 <span className="text-lilac-200">・ 永遠の約束を</span>
-          </p>
-        </div>
-        <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-extrabold tracking-[0.18em] text-white ring-1 ring-white/25">
-          UNLOCKED
-        </span>
+      <div className="mt-5 rounded-2xl border border-lilac-300/30 bg-lilac-400/15 px-4 py-3 text-center">
+        <p className="text-[9px] font-extrabold tracking-[0.3em] text-lilac-200">
+          THANK YOU FOR PLAYING
+        </p>
+        <p className="mt-1 text-[13px] font-extrabold text-white">
+          ふたりの物語(ものがたり)、これにて完(かん)。
+        </p>
+        <p className="mt-0.5 text-[11px] font-bold text-white/75">
+          두 사람의 이야기, 여기서 끝.
+        </p>
       </div>
 
       <div className="mt-5 flex flex-col gap-2">
@@ -927,7 +686,7 @@ function EndCard({ wrongCount }: { wrongCount: number }) {
   );
 }
 
-export default function Stage4Page() {
+export default function Stage5Page() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [i, setI] = useState(0);
@@ -980,7 +739,7 @@ export default function Stage4Page() {
 
   const heartsLeft = Math.max(0, HEARTS_MAX - wrongCount);
   const activeBg: Bg = failed
-    ? "ueno-night"
+    ? "street-night"
     : madFB
       ? madFB.madBg
       : resolveBg(i);
@@ -1040,7 +799,7 @@ export default function Stage4Page() {
             fill
             sizes="(max-width: 480px) 100vw, 440px"
             className="object-cover"
-            priority={key === "ueno-day"}
+            priority={key === "street-day"}
           />
         </div>
       ))}

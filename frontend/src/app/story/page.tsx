@@ -21,7 +21,7 @@ const STAGES: Stage[] = [
   { id: 2, ko: "흔들리는 마음", ja: "揺れる心", x: 72, y: 414, implemented: true },
   { id: 3, ko: "달빛 아래 고백", ja: "月夜の告白", x: 26, y: 293, implemented: true },
   { id: 4, ko: "벚꽃길 산책", ja: "桜並木の散歩", x: 74, y: 177, implemented: true },
-  { id: 5, ko: "영원을 약속해", ja: "永遠の約束を", x: 50, y: 115, implemented: false },
+  { id: 5, ko: "영원을 약속해", ja: "永遠の約束を", x: 50, y: 115, implemented: true },
 ];
 
 const PROGRESS_KEY = "lingodarling:story-cleared";
