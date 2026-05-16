@@ -41,8 +41,13 @@ def list_characters() -> list[CharacterMeta]:
 def get_character(character_key: str) -> dict:
     if character_key not in CHARACTERS:
         raise HTTPException(404, f"unknown character: {character_key}")
+    p = CHARACTERS[character_key]
     meta = _meta(character_key)
     return {
         **meta.model_dump(),
-        "system_instruction_preview": build_system_instruction(CHARACTERS[character_key]),
+        "persona": p.persona,
+        "persona_alt": p.persona_alt,
+        "personality": p.personality,
+        "personality_alt": p.personality_alt,
+        "system_instruction_preview": build_system_instruction(p),
     }

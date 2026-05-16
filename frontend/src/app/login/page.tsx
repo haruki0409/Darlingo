@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-12">
+    <div className="relative flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-12">
       <FloatingChars />
       <main className="relative z-10 w-full max-w-md">
         <BrandHeader />
