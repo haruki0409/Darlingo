@@ -7,21 +7,22 @@ learning **Korean** and **Japanese**.
 
 | Layer    | Tech                                          |
 | -------- | --------------------------------------------- |
-| Frontend | Next.js (React, TypeScript) + Tailwind        |
+| Client   | Flutter (`flutter_app/`) — Web + Android       |
 | Backend  | FastAPI (Python)                              |
 | AI       | Gemini API (chat; voice & images in later phases) |
-| Storage  | _Phase 1: in-memory only_                     |
+| Database | Supabase Postgres (async SQLAlchemy)          |
+| Auth     | Supabase Auth (JWT verified by FastAPI)       |
 
 ## Phase 1 — what works now
 
 A streaming text chat with a companion persona (`Yuna` for Korean, `Yuki` for
 Japanese) that adapts to a chosen level (beginner / intermediate / advanced).
 Replies stream token-by-token over a WebSocket and include a short English
-gloss.
+gloss. Users sign in with Supabase Auth, and every message is persisted to
+Postgres — conversations survive reconnects.
 
 **Not yet built** (later phases): word lookup / tokenization, spaced
-repetition, voice, selfies, auth, and a database. Conversation history lives in
-memory and is lost when the socket closes.
+repetition, voice, and selfies.
 
 ## Running locally
 
@@ -37,16 +38,19 @@ uvicorn app.main:app --reload --port 8000
 
 Get a Gemini API key at <https://aistudio.google.com/apikey>.
 
-### 2. Frontend
+### 2. Client (Flutter)
 
 ```bash
-cd frontend
-npm install
-cp .env.local.example .env.local
-npm run dev
+cd flutter_app
+flutter create . --platforms=web,android   # one-time: generate platform files
+flutter pub get
+flutter run -d chrome \
+  --dart-define=SUPABASE_URL=https://<ref>.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=<anon-key> \
+  --dart-define=WS_URL=ws://localhost:8000/ws/chat
 ```
 
-Open <http://localhost:3000>.
+See `flutter_app/README.md` for details.
 
 ## Project layout
 
@@ -54,16 +58,33 @@ Open <http://localhost:3000>.
 bridge/
 ├── backend/
 │   ├── app/
-│   │   ├── main.py          # FastAPI app + CORS
-│   │   ├── config.py        # env-based settings
-│   │   ├── persona.py       # companion system prompt
-│   │   └── routes/chat.py   # /ws/chat WebSocket → Gemini stream
+│   │   ├── main.py                  # FastAPI app, CORS, startup
+│   │   ├── config.py                # env-based settings
+│   │   ├── db.py                    # async SQLAlchemy engine + session
+│   │   ├── models.py                # users, conversations, messages
+│   │   ├── auth.py                  # Supabase JWT verification
+│   │   ├── persona.py               # companion system prompt
+│   │   └── routes/
+│   │       ├── chat.py              # /ws/chat WebSocket → Gemini stream
+│   │       └── conversations.py     # REST: history endpoints
+│   ├── scripts/smoke_test.py        # end-to-end backend test
 │   └── requirements.txt
-└── frontend/
-    ├── app/                 # Next.js app router (layout, page)
-    ├── components/ChatWindow.tsx
-    └── lib/useChatSocket.ts # WebSocket + streaming state
+└── flutter_app/                     # client — Web + Android
+    └── lib/
+        ├── main.dart                # entry, Supabase init, AuthGate
+        ├── config.dart              # build-time config
+        ├── models/message.dart
+        ├── services/chat_socket.dart
+        └── screens/{login,chat}_screen.dart
 ```
+
+## API contract
+
+- `WS /ws/chat?token=<supabase_jwt>[&conversation_id=<uuid>]` — streaming chat.
+  Server emits `{type:"conversation",id}`, then `{type:"chunk",text}`…,
+  then `{type:"done"}` (or `{type:"error",text}`).
+- `GET /conversations` — list the user's conversations (Bearer token).
+- `GET /conversations/{id}/messages` — messages in one conversation.
 
 ## Roadmap
 

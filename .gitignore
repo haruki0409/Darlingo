@@ -8,12 +8,13 @@ __pycache__/
 venv/
 backend/.env
 
-# Node / Next.js
-node_modules/
-.next/
-out/
-frontend/.env.local
-frontend/next-env.d.ts
+# Flutter
+flutter_app/.dart_tool/
+flutter_app/build/
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+flutter_app/.packages
+flutter_app/pubspec.lock
 
 # Misc
 .DS_Store
