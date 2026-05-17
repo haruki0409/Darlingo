@@ -211,7 +211,8 @@ export default function StoryStagesPage() {
 
   return (
     // 페이지는 부모(app-frame, 고정 높이) 채움. 헤더 고정 + 맵 영역만 스크롤.
-    <div className="relative flex flex-1 flex-col overflow-hidden px-5 pb-4 pt-5">
+    // min-h-0: 중첩 flex 에서 자식이 콘텐츠보다 작게 줄어들어 스크롤이 생기게 함 (iOS Safari 필수).
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-4 pt-5">
       {/* Header */}
       <div className="relative z-10 flex shrink-0 items-center gap-3">
         <Link
@@ -241,7 +242,7 @@ export default function StoryStagesPage() {
       {/* 스크롤 영역 — 화면에 다 안 들어가면 세로 스크롤. 시작 시 맨 아래로. */}
       <div
         ref={scrollRef}
-        className="relative flex flex-1 flex-col overflow-y-auto"
+        className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
       {/* Map — 고정 높이 */}
       <div
