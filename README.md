@@ -1,5 +1,7 @@
 # Darlingo
 
+**🌸 Live app → [darlingo-tau.vercel.app](https://darlingo-tau.vercel.app)**
+
 An AI companion language-learning app. Learn **Korean** and **Japanese** by
 talking — through open conversation or interactive visual-novel stories — with
 an AI companion that speaks back in real time.
