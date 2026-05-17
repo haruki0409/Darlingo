@@ -27,12 +27,12 @@ cd AI
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env          # then put your Gemini API key in .env
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8001
 ```
 
 Get a Gemini API key at <https://aistudio.google.com/apikey>.
 
-Once the server is running, open <http://127.0.0.1:8000/docs> for the
+Once the server is running, open <http://127.0.0.1:8001/docs> for the
 auto-generated OpenAPI docs.
 
 ---

@@ -40,16 +40,15 @@ type Beat = (
   | { kind: "end" }
 ) & { bg?: Bg };
 
-// Stage 5 전용 아트가 아직 없어, 기존 에셋으로 임시 매핑(플레이스홀더).
-// 전용 컷이 생기면 아래 경로 7줄만 교체하면 됨 (Stage 3 의 fallback 방식과 동일).
+// Stage 5 전용 아트 7컷 전부 연결. (※ smile 만 파일명이 언더스코어: stage5_smile.png)
 const BG_SRC: Record<Bg, string> = {
-  "street-day": "/images/stage1-street-happy.png", // 그 골목, 벚꽃 (재회)
-  "street-night": "/images/stage4-ueno-night.png", // 밤 벚꽃 (흔들림·엔딩)
-  normal: "/images/stage4-s1-normal.png",
-  happy: "/images/stage4-s1-happy.png",
-  bad: "/images/stage4-s1-bad.png",
-  cg: "/images/stage4-s4-meet-again.png", // 프러포즈 클로즈업
-  smile: "/images/stage4-s4-last-smile.png", // 수락·엔딩 미소
+  "street-day": "/images/stage5-street-day.png", // 그 골목, 낮 벚꽃 (재회)
+  "street-night": "/images/stage5-street-night.png", // 밤 벚꽃 (흔들림·엔딩)
+  normal: "/images/stage5-normal.png",
+  happy: "/images/stage5-happy.png",
+  bad: "/images/stage5-angry.png", // 오답(슬픔·화남)
+  cg: "/images/stage5-cg.png", // 프러포즈 클로즈업
+  smile: "/images/stage5_smile.png", // 수락·엔딩 미소
 };
 
 const PROGRESS_KEY = "lingodarling:story-cleared";
